@@ -19,7 +19,8 @@ const Navbar = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Menambahkan { passive: true } agar scroll tidak terhambat proses JavaScript
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -51,6 +52,8 @@ const Navbar = () => {
           <img
             src={logoSrc}
             alt="Dafatih Transport Logo"
+            loading="eager"
+            decoding="async"
             className="h-14 md:h-20 w-auto object-contain scale-125 md:scale-150 origin-left transition-all duration-300"
           />
         </Link>

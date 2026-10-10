@@ -1,6 +1,6 @@
 // src/pages/Home.jsx
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
 
@@ -40,7 +40,6 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-  const observerTarget = useRef(null);
 
   const slides = LOCAL_HERO_SLIDES;
 
@@ -93,7 +92,8 @@ const Home = () => {
     return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
   };
 
-  const getFilteredRoutes = () => {
+  // Optimasi: Memfilter rute menggunakan useMemo
+  const filteredRoutes = useMemo(() => {
     let routesList = Array.isArray(routes) ? routes : [];
 
     if (filter && filter !== 'all') {
@@ -136,9 +136,8 @@ const Home = () => {
     }
 
     return routesList;
-  };
+  }, [routes, filter, searchQuery]);
 
-  const filteredRoutes = getFilteredRoutes();
   const currentLimit = visibleCount ?? getInitialLimit();
   const displayedRoutes = filteredRoutes.slice(0, currentLimit);
   const hasMore = currentLimit < filteredRoutes.length;
@@ -151,7 +150,7 @@ const Home = () => {
     setTimeout(() => {
       setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
       setIsLoading(false);
-    }, 800);
+    }, 400);
   }, [hasMore, isLoading, setVisibleCount]);
 
   const handleFilterChange = (catId) => {
@@ -223,7 +222,7 @@ const Home = () => {
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
           <div>
             <a
-              href={heroInfo?.googleMapsUrl || 'https://maps.google.com'}
+              href={'https://www.google.com/search?q=dafatihtransport.com&stick=H4sIAAAAAAAA_-NgU1I1qDBKMTZNNjezNDaySDJLNra0MqhITjNLNEg0tTRMMk82S0tLXcQqkpKYlliSmVFSlJhXXJBfVKKXnJ8LAB6UJTRAAAAA&hl=id&mat=CQ-67MPMA9qKElYBzAmVZhHo2UPj_XCAi05RSJv6JMzZ7QwpzpO0Th02NY0Rm5iMY1jIYDRpU1BfyJPs9AgkUeiCOcS3FNPK9jimGftGWhmP-U0EEhl40Kb-rBUDc5WoCA&authuser=0&ved=1t:350944'}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
@@ -244,12 +243,7 @@ const Home = () => {
             {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
           </h1>
 
-          <p className="mx-auto mb-3 max-w-[580px] text-[0.74rem] opacity-90 leading-tight md:mb-4 md:text-[0.88rem]">
-            {heroInfo?.subtitle ||
-              'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.'}
-          </p>
-
-          {/* Tombol Kategori Melayang di Dalam Hero Section */}
+          {/* Tombol Kategori Melayang */}
           <div className="mt-1 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((cat) => (
               <button
@@ -337,6 +331,7 @@ const Home = () => {
                         src={imageSrc}
                         alt={routeTitle}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
                         onError={() => handleImageError(routeId)}
                       />
@@ -395,8 +390,7 @@ const Home = () => {
           </div>
         )}
 
-        <div ref={observerTarget} className="h-px" />
-
+        {/* Tombol Manual Load More */}
         {hasMore && (
           <div className="mt-6 flex min-h-[44px] items-center justify-center text-center">
             {isLoading ? (
@@ -406,11 +400,12 @@ const Home = () => {
               </div>
             ) : (
               <button
-                className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white"
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
                 onClick={loadMoreWithDelay}
               >
                 <i className="fa-solid fa-arrows-rotate"></i>
-                <span>Tampilkan Lebih Banyak</span>
+                <span>Tampilkan Lebih Banyak ({filteredRoutes.length - currentLimit} rute tersisa)</span>
               </button>
             )}
           </div>
