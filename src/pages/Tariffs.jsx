@@ -39,7 +39,7 @@ const Tariffs = () => {
 
   if (loadingApi) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center font-bold text-sky-600">
+      <div className="flex min-h-[50vh] items-center justify-center pt-24 font-bold text-sky-600">
         <i className="fa-solid fa-circle-notch fa-spin mr-2 text-xl"></i>
         Memuat daftar tarif dari server...
       </div>
@@ -48,7 +48,7 @@ const Tariffs = () => {
 
   if (errorApi) {
     return (
-      <div className="py-20 text-center text-rose-500">
+      <div className="py-20 pt-28 text-center text-rose-500">
         <i className="fa-solid fa-triangle-exclamation mb-2 text-3xl"></i>
         <p>{errorApi}</p>
       </div>
@@ -57,8 +57,8 @@ const Tariffs = () => {
 
   return (
     <div className="block">
-      {/* Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-7 text-center text-white">
+      {/* Banner - Ditambahkan `pt-20 md:pt-28` agar tidak tertutup Navbar */}
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-28 text-center text-white">
         <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
           Daftar Tarif Transportasi Lombok
         </h1>

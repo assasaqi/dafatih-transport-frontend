@@ -94,7 +94,7 @@ const Blog = () => {
   return (
     <div className="block">
       {/* Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-7 text-center text-white">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-28 text-center text-white">
         <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
           Panduan & Tips Wisata Lombok
         </h1>

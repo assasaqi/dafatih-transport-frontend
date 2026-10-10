@@ -85,7 +85,7 @@ const Booking = () => {
   return (
     <div className="block">
       {/* Page Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[4%] py-3 text-center text-white sm:py-3.5">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[4%] py-3 pt-20 md:pt-28 text-center text-white sm:py-3.5">
         <h1 className="mb-0.5 text-[clamp(1.05rem,1.8vw+0.3rem,1.25rem)] font-extrabold">
           Formulir Pemesanan Transportasi
         </h1>
