@@ -96,11 +96,8 @@ const Blog = () => {
       {/* Banner */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-28 text-center text-white">
         <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
-          Panduan & Tips Wisata Lombok
+     Tips Wisata Lombok
         </h1>
-        <p className="mx-auto max-w-[550px] text-xs opacity-90 md:text-sm">
-          Artikel, informasi rute terbaik, dan rekomendasi destinasi impian Anda di Pulau Lombok.
-        </p>
       </div>
 
       {/* Main Content */}

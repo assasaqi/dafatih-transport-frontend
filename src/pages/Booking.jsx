@@ -1,43 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import ModalSummary from '@/components/ModalSummary';
+// src/pages/Booking.jsx
 
-// Daftar kode negara standar sebagai pengganti file countries.json lokal
-const COUNTRY_CODES = [
-  { code: '62', flag: '🇮🇩', name: 'Indonesia' },
-  { code: '60', flag: '🇲🇾', name: 'Malaysia' },
-  { code: '65', flag: '🇸🇬', name: 'Singapore' },
-  { code: '61', flag: '🇦🇺', name: 'Australia' },
-  { code: '44', flag: '🇬🇧', name: 'United Kingdom' },
-  { code: '1', flag: '🇺🇸', name: 'United States' },
-  { code: '81', flag: '🇯🇵', name: 'Japan' },
-  { code: '82', flag: '🇰🇷', name: 'South Korea' },
-  { code: '49', flag: '🇩🇪', name: 'Germany' },
-  { code: '33', flag: '🇫🇷', name: 'France' },
-  { code: '31', flag: '🇳🇱', name: 'Netherlands' },
-  { code: '86', flag: '🇨🇳', name: 'China' },
-  { code: '91', flag: '🇮🇳', name: 'India' },
-  { code: '66', flag: '🇹🇭', name: 'Thailand' },
-  { code: '63', flag: '🇵🇭', name: 'Philippines' },
-];
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ModalSummary from '@/components/ModalSummary';
 
 const Booking = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const PHONE_NUMBER = "6287757004214";
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     custName: '',
-    countryCode: '62',
     custWa: '',
-    pickupDate: todayStr,
-    pickupTime: '08:00',
+    pickupDate: '',
+    pickupTime: '',
     pickupLoc: '',
     dropLoc: '',
     price: 0
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
+  const [waError, setWaError] = useState('');
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -53,18 +38,40 @@ const Booking = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === 'custWa') {
+      const cleaned = value.replace(/\D/g, '');
+      setFormData((prev) => ({ ...prev, custWa: cleaned }));
+
+      if (cleaned && (cleaned.length < 10 || cleaned.length > 14)) {
+        setWaError('Masukkan nomor WhatsApp yang valid (10-14 digit)');
+      } else {
+        setWaError('');
+      }
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleClear = (field) => {
     setFormData((prev) => ({ ...prev, [field]: '' }));
+    if (field === 'custWa') {
+      setWaError('');
+    }
+  };
+
+  const handleResetForm = () => {
+    setFormData(initialFormState);
+    setWaError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    let waNumber = formData.custWa.trim();
-    if (waNumber.startsWith('0')) {
-      waNumber = waNumber.substring(1);
+
+    if (!formData.custWa || formData.custWa.length < 10 || formData.custWa.length > 14) {
+      setWaError('Silakan masukkan nomor WhatsApp yang valid (10-14 digit)');
+      return;
     }
 
     if (!formData.price || !formData.pickupLoc) {
@@ -72,107 +79,123 @@ const Booking = () => {
       return;
     }
 
-    setFormData((prev) => ({ ...prev, custWa: waNumber }));
     setShowModal(true);
   };
 
   const handleConfirmWhatsApp = () => {
-    const message = `Halo Dafatih Transport, saya ingin memesan layanan antar-jemput dengan detail berikut:%0A%0A*Nama:* ${formData.custName}%0A*No. WA:* +${formData.countryCode}${formData.custWa}%0A*Tanggal:* ${formData.pickupDate}%0A*Waktu:* ${formData.pickupTime} WITA%0A*Penjemputan:* ${formData.pickupLoc}%0A*Tujuan:* ${formData.dropLoc}%0A*Estimasi Tarif:* Rp ${new Intl.NumberFormat('id-ID').format(formData.price)}%0A%0AMohon konfirmasinya, terima kasih.`;
+    let formattedWa = formData.custWa.trim();
+    if (formattedWa.startsWith('0')) {
+      formattedWa = '62' + formattedWa.substring(1);
+    } else if (!formattedWa.startsWith('62')) {
+      formattedWa = '62' + formattedWa;
+    }
+
+    const message = `Halo Dafatih Transport, saya ingin memesan layanan antar-jemput dengan detail berikut:%0A%0A*Nama:* ${formData.custName}%0A*No. WA:* +${formattedWa}%0A*Tanggal:* ${formData.pickupDate}%0A*Waktu:* ${formData.pickupTime} WITA%0A*Penjemputan:* ${formData.pickupLoc}%0A*Tujuan:* ${formData.dropLoc}%0A*Estimasi Tarif:* Rp ${new Intl.NumberFormat('id-ID').format(formData.price)}%0A%0AMohon konfirmasinya, terima kasih.`;
 
     window.open(`https://wa.me/${PHONE_NUMBER}?text=${message}`, '_blank');
   };
 
   return (
     <div className="block">
-      {/* Page Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[4%] py-3 pt-20 md:pt-28 text-center text-white sm:py-3.5">
-        <h1 className="mb-0.5 text-[clamp(1.05rem,1.8vw+0.3rem,1.25rem)] font-extrabold">
-          Formulir Pemesanan Transportasi
-        </h1>
-        <p className="mx-auto max-w-[500px] text-[clamp(0.72rem,0.7vw+0.3rem,0.78rem)] text-slate-100 opacity-90">
-          Lengkapi formulir di bawah ini untuk reservasi cepat via WhatsApp.
-        </p>
-      </div>
+      {/* Page Banner Header */}
+      <section className="relative flex min-h-[100px] md:min-h-[200px] items-center overflow-hidden bg-slate-900 pb-4 text-center text-white">
+        <div className="absolute inset-0 z-[1] bg-gradient-to-b from-slate-950/80 via-slate-900/85 to-slate-950/95" />
 
-      {/* Booking Form Section */}
-      <section className="mx-auto max-w-[500px] px-[3%] pb-6 pt-2.5 sm:px-[4%] sm:pb-8 sm:pt-3">
-        <div className="mx-auto rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-3.5">
-          <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-2.5">
-              {/* Nama Lengkap */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[0.76rem] font-bold text-slate-700">
-                  Nama Lengkap Pemesan *
-                </label>
-                <div className="relative flex w-full items-center">
-                  <input
-                    type="text"
-                    name="custName"
-                    required
-                    placeholder="Contoh: Budi Santoso"
-                    value={formData.custName}
-                    onChange={handleChange}
-                    className="h-[36px] w-full rounded-md border border-slate-300 bg-white px-2.5 pr-8 text-[0.78rem] text-slate-900 outline-none transition-colors focus:border-sky-600 focus:ring-2 focus:ring-sky-600/10"
-                  />
-                  {formData.custName && (
-                    <button
-                      type="button"
-                      onClick={() => handleClear('custName')}
-                      className="absolute right-1.5 flex p-1 text-[0.8rem] text-slate-400 hover:text-slate-600"
-                    >
-                      &times;
-                    </button>
-                  )}
-                </div>
-              </div>
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-[800px] flex-col items-center justify-center px-[4%] pt-20 md:pt-24">
+          <h1 className="mb-2 text-[1.2rem] font-extrabold leading-snug md:text-[1.8rem]">
+            Pemesanan Transportasi Lombok
+          </h1>
+        </div>
+      </section>
 
-              {/* Nomor WhatsApp */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[0.76rem] font-bold text-slate-700">
-                  Nomor WhatsApp *
-                </label>
-                <div className="flex items-center overflow-hidden rounded-md border border-slate-300 bg-white">
-                  <select
-                    name="countryCode"
-                    value={formData.countryCode}
-                    onChange={handleChange}
-                    className="h-[34px] w-[100px] shrink-0 border-r border-slate-300 bg-slate-100 px-1.5 text-[0.78rem] font-bold text-slate-600 outline-none"
+      {/* Form Section */}
+      <section className="mx-auto max-w-[520px] px-[4%] py-6 md:py-8">
+        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)] sm:p-6">
+          <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <h2 className="text-[0.92rem] font-extrabold text-slate-800">Form Pemesanan</h2>
+            <button
+              type="button"
+              onClick={handleResetForm}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-[0.72rem] font-bold text-slate-600 transition-colors hover:bg-rose-50 hover:text-rose-600"
+            >
+              <i className="fa-solid fa-rotate-left text-[0.7rem]"></i>
+              <span>Reset Form</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+
+            {/* Nama Lengkap */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.78rem] font-bold text-slate-700">
+                Nama Lengkap Pemesan <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative flex w-full items-center">
+                <i className="fa-solid fa-user absolute left-3 text-[0.8rem] text-slate-400"></i>
+                <input
+                  type="text"
+                  name="custName"
+                  required
+                  placeholder="Contoh: Dafatih Ramadhan"
+                  value={formData.custName}
+                  onChange={handleChange}
+                  className="h-[40px] w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-8 text-[0.8rem] text-slate-900 outline-none transition-all focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-600/10"
+                />
+                {formData.custName && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('custName')}
+                    className="absolute right-2.5 flex items-center justify-center text-[0.9rem] text-slate-400 hover:text-slate-600"
                   >
-                    {COUNTRY_CODES.map((c, i) => (
-                      <option key={i} value={c.code}>
-                        {c.flag} +{c.code}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="relative flex flex-1 items-center">
-                    <input
-                      type="tel"
-                      name="custWa"
-                      required
-                      placeholder="8123456789"
-                      value={formData.custWa}
-                      onChange={handleChange}
-                      className="h-[34px] w-full bg-transparent px-2.5 pr-8 text-[0.78rem] text-slate-900 outline-none"
-                    />
-                    {formData.custWa && (
-                      <button
-                        type="button"
-                        onClick={() => handleClear('custWa')}
-                        className="absolute right-1.5 flex p-1 text-[0.8rem] text-slate-400 hover:text-slate-600"
-                      >
-                        &times;
-                      </button>
-                    )}
-                  </div>
-                </div>
+                    &times;
+                  </button>
+                )}
               </div>
+            </div>
 
-              {/* Grid Tanggal & Waktu */}
-              <div className="grid grid-cols-[1.4fr_1fr] gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[0.76rem] font-bold text-slate-700">
-                    Tanggal Jemput *
-                  </label>
+            {/* Nomor WhatsApp */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.78rem] font-bold text-slate-700">
+                Nomor WhatsApp <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative flex w-full items-center">
+                <i className="fa-brands fa-whatsapp absolute left-3 text-[0.9rem] text-emerald-600"></i>
+                <input
+                  type="tel"
+                  name="custWa"
+                  required
+                  placeholder="Contoh: 0812-xxxx-xxxx"
+                  value={formData.custWa}
+                  onChange={handleChange}
+                  maxLength={14}
+                  className={`h-[40px] w-full rounded-xl border ${
+                    waError ? 'border-rose-500 ring-2 ring-rose-500/10' : 'border-slate-200'
+                  } bg-slate-50/50 pl-9 pr-8 text-[0.8rem] text-slate-900 outline-none transition-all focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-600/10`}
+                />
+                {formData.custWa && (
+                  <button
+                    type="button"
+                    onClick={() => handleClear('custWa')}
+                    className="absolute right-2.5 flex items-center justify-center text-[0.9rem] text-slate-400 hover:text-slate-600"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+              {waError && (
+                <span className="text-[0.7rem] font-semibold text-rose-500">{waError}</span>
+              )}
+            </div>
+
+            {/* Grid Tanggal & Waktu */}
+            <div className="grid grid-cols-[1.3fr_1fr] gap-2.5">
+              {/* Tanggal Jemput */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.78rem] font-bold text-slate-700">
+                  Tanggal Jemput <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <i className="fa-solid fa-calendar-days pointer-events-none absolute left-3 text-[0.8rem] text-sky-600"></i>
                   <input
                     type="date"
                     name="pickupDate"
@@ -180,83 +203,110 @@ const Booking = () => {
                     required
                     value={formData.pickupDate}
                     onChange={handleChange}
-                    className="h-[36px] w-full rounded-md border border-slate-300 bg-white px-2 pr-1 text-[0.78rem] text-slate-900 outline-none transition-colors focus:border-sky-600 focus:ring-2 focus:ring-sky-600/10 [&::-webkit-calendar-picker-indicator]:scale-85 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
+                    className="h-[40px] w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-2 text-[0.78rem] font-semibold text-slate-800 outline-none transition-all focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-600/10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
                   />
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-[0.76rem] font-bold text-slate-700">
-                    Waktu (WITA) *
-                  </label>
+              {/* Waktu (WITA) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[0.78rem] font-bold text-slate-700">
+                  Waktu (WITA) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <i className="fa-solid fa-clock pointer-events-none absolute left-3 text-[0.8rem] text-sky-600"></i>
                   <input
                     type="time"
                     name="pickupTime"
                     required
                     value={formData.pickupTime}
                     onChange={handleChange}
-                    className="h-[36px] w-full rounded-md border border-slate-300 bg-white px-2 pr-1 text-[0.78rem] text-slate-900 outline-none transition-colors focus:border-sky-600 focus:ring-2 focus:ring-sky-600/10 [&::-webkit-calendar-picker-indicator]:scale-85 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
+                    className="h-[40px] w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-2 text-[0.78rem] font-semibold text-slate-800 outline-none transition-all focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-600/10 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-60"
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Penjemputan */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[0.76rem] font-bold text-slate-700">
-                  Lokasi Penjemputan (From) *
+            {/* Penjemputan (From) */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[0.78rem] font-bold text-slate-700">
+                  Lokasi Penjemputan (From) <span className="text-rose-500">*</span>
                 </label>
+                {!formData.pickupLoc && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/tarif')}
+                    className="text-[0.7rem] font-bold text-sky-600 hover:underline"
+                  >
+                    + Pilih Rute
+                  </button>
+                )}
+              </div>
+              <div className="relative flex items-center">
+                <i className="fa-solid fa-location-dot absolute left-3 text-[0.8rem] text-rose-500"></i>
                 <input
                   type="text"
                   name="pickupLoc"
                   required
                   readOnly
-                  placeholder="Pilih dari Daftar Tarif"
+                  placeholder="Pilih rute dari Daftar Tarif"
                   value={formData.pickupLoc}
-                  className="h-[36px] w-full cursor-pointer rounded-md border border-slate-300 bg-slate-50 px-2.5 text-[0.78rem] text-slate-900 outline-none"
+                  className="h-[40px] w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-100/70 pl-9 pr-3 text-[0.8rem] font-semibold text-slate-800 outline-none"
+                  onClick={() => !formData.pickupLoc && navigate('/tarif')}
                 />
               </div>
+            </div>
 
-              {/* Tujuan */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[0.76rem] font-bold text-slate-700">
-                  Lokasi Tujuan (To) *
-                </label>
+            {/* Tujuan (To) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.78rem] font-bold text-slate-700">
+                Lokasi Tujuan (To) <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative flex items-center">
+                <i className="fa-solid fa-flag-checkered absolute left-3 text-[0.8rem] text-emerald-600"></i>
                 <input
                   type="text"
                   name="dropLoc"
                   required
                   readOnly
-                  placeholder="Pilih dari Daftar Tarif"
+                  placeholder="Pilih rute dari Daftar Tarif"
                   value={formData.dropLoc}
-                  className="h-[36px] w-full cursor-pointer rounded-md border border-slate-300 bg-slate-50 px-2.5 text-[0.78rem] text-slate-900 outline-none"
+                  className="h-[40px] w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-100/70 pl-9 pr-3 text-[0.8rem] font-semibold text-slate-800 outline-none"
+                  onClick={() => !formData.dropLoc && navigate('/tarif')}
                 />
               </div>
             </div>
 
-            {/* Box Estimasi Tarif */}
-            <div className="my-3 rounded-md border border-dashed border-sky-600 bg-sky-50/70 p-2.5 text-left">
-              <div className="flex items-center justify-between text-[0.8rem] text-slate-900">
-                <span>Estimasi Tarif Sesuai Rute: </span>
-                <strong className="text-[0.9rem] text-sky-600">
+            {/* Box Ringkasan Tarif */}
+            <div className="mt-1 rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-left">
+              <div className="flex items-center justify-between text-[0.82rem]">
+                <span className="font-medium text-slate-600">Total Tarif Estimasi:</span>
+                <strong className="text-[0.95rem] font-extrabold text-sky-600">
                   {formData.price > 0
                     ? `Rp ${new Intl.NumberFormat('id-ID').format(formData.price)}`
-                    : 'Pilih dari Daftar Tarif'}
+                    : 'Belum Ada Rute'}
                 </strong>
               </div>
-              <small className="mt-0.5 block text-[0.7rem] text-slate-500">
-                *Tarif otomatis terisi saat memilih rute (Maks 4 Pax & Bagasi).
-              </small>
+              <div className="mt-2 flex items-center gap-1.5 border-t border-sky-100 pt-2 text-[0.7rem] text-slate-500">
+                <i className="fa-solid fa-circle-info text-sky-600"></i>
+                <span>Sudah termasuk Mobil, Driver, BBM, Maks 4 Penumpang + Bagasi.</span>
+              </div>
             </div>
 
+            {/* Tombol Konfirmasi WhatsApp */}
             <button
               type="submit"
-              className="inline-flex h-[38px] w-full items-center justify-center gap-1.5 rounded-md bg-sky-600 text-[0.82rem] font-bold text-white shadow-[0_3px_10px_rgba(2,132,199,0.2)] transition-colors hover:bg-sky-700"
+              className="mt-2 inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-xl bg-sky-600 text-[0.85rem] font-bold text-white shadow-md shadow-sky-600/20 transition-colors hover:bg-sky-700"
             >
-              <i className="fa-brands fa-whatsapp text-[1rem]"></i> Konfirmasi Pemesanan
+              <i className="fa-brands fa-whatsapp text-[1.1rem]"></i>
+              <span>Konfirmasi Pemesanan</span>
             </button>
           </form>
         </div>
       </section>
 
+      {/* Modal Ringkasan */}
       {showModal && (
         <ModalSummary
           formData={formData}

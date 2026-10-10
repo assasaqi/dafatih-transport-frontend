@@ -6,11 +6,25 @@ import { useHome } from '@/context/HomeContext';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
+// Memuat semua gambar di folder public/images/ secara dinamis (Vite)
+const globImages = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
+const dynamicHeroSlides = Object.keys(globImages).map((path) => ({
+  image: path.replace(/^\/public/, ''),
+}));
+
+const LOCAL_HERO_SLIDES =
+  dynamicHeroSlides.length > 0
+    ? dynamicHeroSlides
+    : [
+        { image: '/images/hero1.jpg' },
+        { image: '/images/hero2.jpg' },
+        { image: '/images/hero3.jpg' },
+      ];
+
 const Home = () => {
   const navigate = useNavigate();
 
   const {
-    heroSlides = [],
     heroInfo = {},
     routes = [],
     loadingApi,
@@ -25,9 +39,10 @@ const Home = () => {
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageErrors, setImageErrors] = useState({});
   const observerTarget = useRef(null);
 
-  const slides = Array.isArray(heroSlides) && heroSlides.length > 0 ? heroSlides : [];
+  const slides = LOCAL_HERO_SLIDES;
 
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
@@ -43,20 +58,33 @@ const Home = () => {
     }
   }, [visibleCount, setVisibleCount]);
 
+  // Interval perpindahan slide setiap 10 menit (600.000 ms)
   useEffect(() => {
     if (slides.length <= 1) return;
+
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
+    }, TEN_MINUTES_MS);
 
     return () => clearInterval(timer);
   }, [slides.length]);
 
+  // Formatter URL Gambar Dinamis (Mengembalikan null jika tidak ada path)
   const getImageUrl = (imgPath) => {
-    if (!imgPath)
-      return 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80';
-    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-    return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+    if (!imgPath || typeof imgPath !== 'string' || imgPath.trim() === '') {
+      return null;
+    }
+    if (imgPath.startsWith('/images/') || imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+      return imgPath;
+    }
+    const cleanDomain = API_BASE_DOMAIN.replace(/\/+$/, '');
+    const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
+    return `${cleanDomain}${cleanPath}`;
+  };
+
+  const handleImageError = (routeId) => {
+    setImageErrors((prev) => ({ ...prev, [routeId]: true }));
   };
 
   const formatPrice = (priceVal) => {
@@ -173,22 +201,25 @@ const Home = () => {
 
   return (
     <div className="block">
-      {/* Hero Section */}
-      <section className="relative flex min-h-[300px] md:min-h-[380px] items-center overflow-hidden rounded-b-3xl bg-slate-900 pb-4">
+      {/* Hero Section (Rounded dihapus agar presisi rata) */}
+      <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{ backgroundImage: `url('${slide.image}')` }}
-            />
-          ))}
+          {slides.map((slide, index) => {
+            const slideImg = getImageUrl(slide.image);
+            return (
+              <div
+                key={index}
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                  index === currentSlide ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{ backgroundImage: slideImg ? `url('${slideImg}')` : 'none' }}
+              />
+            );
+          })}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/75 to-slate-950/90" />
         </div>
 
-        {/* Content Container */}
+        {/* Content Container Hero */}
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
           <div>
             <a
@@ -209,12 +240,11 @@ const Home = () => {
             </a>
           </div>
 
-          <h1 className="mb-2 max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:mb-3 md:text-[1.8rem]">
-            {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
+          <h1 className="mb-1.5 max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:mb-2 md:text-[1.8rem]">
+            {heroInfo?.title || 'Layanan Antar-Jemput'}
           </h1>
-
-          {/* Tombol Kategori Melayang di Hero Section */}
-          <div className="mt-2 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Tombol Kategori Melayang di Dalam Hero Section */}
+          <div className="mt-1 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -280,7 +310,11 @@ const Home = () => {
         {displayedRoutes.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
             {displayedRoutes.map((route, idx) => {
-              const imageSrc = getImageUrl(route.image_url || route.image);
+              const routeId = route.id || idx;
+              const rawImgPath = route.image_url || route.image;
+              const imageSrc = getImageUrl(rawImgPath);
+              const isImageFailed = imageErrors[routeId] || !imageSrc;
+
               const routeTitle =
                 route.title ||
                 route.name ||
@@ -288,16 +322,24 @@ const Home = () => {
 
               return (
                 <div
-                  key={route.id || idx}
+                  key={routeId}
                   className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]"
                 >
                   <div className="relative h-[135px] overflow-hidden bg-slate-100">
-                    <img
-                      src={imageSrc}
-                      alt={routeTitle}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
-                    />
+                    {!isImageFailed ? (
+                      <img
+                        src={imageSrc}
+                        alt={routeTitle}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
+                        onError={() => handleImageError(routeId)}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center bg-slate-200/70 p-2 text-slate-400">
+                        <i className="fa-regular fa-image mb-1 text-[1.5rem]"></i>
+                        <span className="text-[0.68rem] font-medium">No Image Available</span>
+                      </div>
+                    )}
                     <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2 py-0.5 text-[0.78rem] font-bold text-white">
                       {formatPrice(route.price)}
                     </span>

@@ -96,14 +96,11 @@ const Gallery = () => {
   return (
     <div className="block">
       {/* Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-28 text-center text-white">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-27 text-center text-white">
         <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
           Galeri Dokumentasi & Wisata
         </h1>
-        <p className="mx-auto max-w-[550px] text-xs opacity-90 md:text-sm">
-          Momen perjalanan, keindahan destinasi, dan kenyamanan perjalanan bersama Dafatih Transport.
-        </p>
-      </div>
+            </div>
 
       {/* Main Content */}
       <section className="mx-auto max-w-[1200px] px-[4%] py-6 md:px-[5%] md:py-8">
