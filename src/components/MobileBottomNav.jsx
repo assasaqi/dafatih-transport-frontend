@@ -2,89 +2,38 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const MobileBottomNav = () => {
+  const getNavLinkClass = ({ isActive }) =>
+    `flex h-full flex-1 flex-col items-center justify-center text-[0.68rem] font-semibold transition-all duration-200 no-underline ${
+      isActive ? 'text-sky-600' : 'text-slate-400 hover:text-sky-600'
+    }`;
+
   return (
-    <>
-      <style>{`
-        .mobile-bottom-nav {
-          display: none;
-        }
+    <nav className="fixed bottom-0 left-0 z-[1500] flex h-[60px] w-full items-center justify-around border-t border-black/10 bg-white p-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] lg:hidden">
+      <NavLink to="/" className={getNavLinkClass}>
+        <i className="fa-solid fa-house mb-[2px] text-[1.15rem]"></i>
+        <span>Beranda</span>
+      </NavLink>
 
-        @media (max-width: 992px) {
-          .mobile-bottom-nav {
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: #ffffff;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-            z-index: 1500;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0;
-          }
+      <NavLink to="/tarif" className={getNavLinkClass}>
+        <i className="fa-solid fa-table-list mb-[2px] text-[1.15rem]"></i>
+        <span>Tarif</span>
+      </NavLink>
 
-          .mobile-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex: 1;
-            height: 100%;
-            text-decoration: none;
-            color: var(--neutral-400, #94a3b8);
-            font-size: 0.68rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-          }
+      <NavLink to="/pesan" className={getNavLinkClass}>
+        <i className="fa-solid fa-circle-plus mb-[2px] text-[1.55rem] text-sky-600"></i>
+        <span>Pesan</span>
+      </NavLink>
 
-          .mobile-nav-item i {
-            font-size: 1.15rem;
-            margin-bottom: 2px;
-          }
+      <NavLink to="/galeri" className={getNavLinkClass}>
+        <i className="fa-solid fa-images mb-[2px] text-[1.15rem]"></i>
+        <span>Galeri</span>
+      </NavLink>
 
-          .mobile-nav-item.active {
-            color: var(--primary, #0284c7);
-          }
-
-          .mobile-nav-book i {
-            font-size: 1.55rem;
-            color: var(--primary, #0284c7);
-          }
-        }
-
-        @media (min-width: 993px) {
-          .mobile-bottom-nav {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      <div className="mobile-bottom-nav">
-        <NavLink to="/" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
-          <i className="fa-solid fa-house"></i>
-          <span>Beranda</span>
-        </NavLink>
-        <NavLink to="/tarif" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
-          <i className="fa-solid fa-table-list"></i>
-          <span>Tarif</span>
-        </NavLink>
-        <NavLink to="/pesan" className={({ isActive }) => `mobile-nav-item mobile-nav-book ${isActive ? 'active' : ''}`}>
-          <i className="fa-solid fa-circle-plus"></i>
-          <span>Pesan</span>
-        </NavLink>
-        <NavLink to="/galeri" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
-          <i className="fa-solid fa-images"></i>
-          <span>Galeri</span>
-        </NavLink>
-        <NavLink to="/blog" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
-          <i className="fa-solid fa-blog"></i>
-          <span>Blog</span>
-        </NavLink>
-      </div>
-    </>
+      <NavLink to="/blog" className={getNavLinkClass}>
+        <i className="fa-solid fa-blog mb-[2px] text-[1.15rem]"></i>
+        <span>Blog</span>
+      </NavLink>
+    </nav>
   );
 };
 
