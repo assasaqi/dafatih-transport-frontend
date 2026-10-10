@@ -4,7 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { TariffProvider } from '@/context/TariffContext';
 import { BlogProvider } from '@/context/BlogContext';
 import { GalleryProvider } from '@/context/GalleryContext';
-import { HomeProvider } from '@/context/HomeContext'; // <--- Impor di sini
+import { HomeProvider } from '@/context/HomeContext';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import App from './App';
 import './styles/global.css';
 
