@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import countriesData from '../data/countries.json';
 import ModalSummary from '@/components/ModalSummary';
+
+// Daftar kode negara standar sebagai pengganti file countries.json lokal
+const COUNTRY_CODES = [
+  { code: '62', flag: '🇮🇩', name: 'Indonesia' },
+  { code: '60', flag: '🇲🇾', name: 'Malaysia' },
+  { code: '65', flag: '🇸🇬', name: 'Singapore' },
+  { code: '61', flag: '🇦🇺', name: 'Australia' },
+  { code: '44', flag: '🇬🇧', name: 'United Kingdom' },
+  { code: '1', flag: '🇺🇸', name: 'United States' },
+  { code: '81', flag: '🇯🇵', name: 'Japan' },
+  { code: '82', flag: '🇰🇷', name: 'South Korea' },
+  { code: '49', flag: '🇩🇪', name: 'Germany' },
+  { code: '33', flag: '🇫🇷', name: 'France' },
+  { code: '31', flag: '🇳🇱', name: 'Netherlands' },
+  { code: '86', flag: '🇨🇳', name: 'China' },
+  { code: '91', flag: '🇮🇳', name: 'India' },
+  { code: '66', flag: '🇹🇭', name: 'Thailand' },
+  { code: '63', flag: '🇵🇭', name: 'Philippines' },
+];
 
 const Booking = () => {
   const location = useLocation();
@@ -120,7 +138,7 @@ const Booking = () => {
                     onChange={handleChange}
                     className="h-[34px] w-[100px] shrink-0 border-r border-slate-300 bg-slate-100 px-1.5 text-[0.78rem] font-bold text-slate-600 outline-none"
                   >
-                    {countriesData.countries?.map((c, i) => (
+                    {COUNTRY_CODES.map((c, i) => (
                       <option key={i} value={c.code}>
                         {c.flag} +{c.code}
                       </option>

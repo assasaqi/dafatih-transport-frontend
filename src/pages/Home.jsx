@@ -1,28 +1,33 @@
+// src/pages/Home.jsx
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
 
-import heroData from '@/data/hero.json';
-import routesData from '@/data/routes.json';
+const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
 const Home = () => {
   const navigate = useNavigate();
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const slides = heroData.heroSlides || [];
-
   const {
+    heroSlides = [],
+    heroInfo = {},
+    routes = [],
+    loadingApi,
+    errorApi,
     visibleCount,
     setVisibleCount,
-    filter,
+    filter = 'all',
     setFilter,
-    searchQuery,
-    setSearchQuery
+    searchQuery = '',
+    setSearchQuery,
   } = useHome();
 
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const observerTarget = useRef(null);
 
+  const slides = Array.isArray(heroSlides) && heroSlides.length > 0 ? heroSlides : [];
   const getInitialLimit = () => (window.innerWidth <= 768 ? 3 : 6);
 
   useEffect(() => {
@@ -40,20 +45,63 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  const getFilteredRoutes = () => {
-    let routesList = routesData.routes || [];
+  // Formatter URL Gambar Lengkap
+  const getImageUrl = (imgPath) => {
+    if (!imgPath)
+      return 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80';
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+    return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+  };
 
+  // Formatter Mata Uang Rupiah
+  const formatPrice = (priceVal) => {
+    const num = Number(priceVal);
+    if (isNaN(num) || num <= 0) return 'Hubungi Kami';
+    return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
+  };
+
+  // Filtering rute berdasarkan kategori & pencarian
+  const getFilteredRoutes = () => {
+    let routesList = Array.isArray(routes) ? routes : [];
+
+    // Filter Kategori Tab
     if (filter !== 'all') {
-      routesList = routesList.filter((r) => r.category === filter);
+      routesList = routesList.filter((r) => {
+        const pickup = (r.pickup_location || r.origin || '').toLowerCase();
+        const drop = (r.dropoff_location || r.destination || '').toLowerCase();
+        const title = (r.title || r.name || '').toLowerCase();
+
+        if (filter === 'airport') {
+          return (
+            pickup.includes('airport') ||
+            pickup.includes('bandara') ||
+            pickup.includes('lia') ||
+            title.includes('bandara') ||
+            title.includes('airport')
+          );
+        }
+        if (filter === 'bangsal') {
+          return pickup.includes('bangsal') || drop.includes('bangsal') || title.includes('bangsal');
+        }
+        if (filter === 'senggigi') {
+          return pickup.includes('senggigi') || drop.includes('senggigi') || title.includes('senggigi');
+        }
+        if (filter === 'kuta') {
+          return pickup.includes('kuta') || drop.includes('kuta') || title.includes('kuta');
+        }
+        return true;
+      });
     }
 
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+    // Filter Pencarian Teks
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (q !== '') {
       routesList = routesList.filter((r) => {
-        const title = (r.title || '').toLowerCase();
-        const dropLoc = (r.drop || r.destination || '').toLowerCase();
-        const pickupLoc = (r.pickup || r.pickupLoc || '').toLowerCase();
-        return title.includes(q) || dropLoc.includes(q) || pickupLoc.includes(q);
+        if (!r) return false;
+        const title = (r.title || r.name || '').toLowerCase();
+        const pickup = (r.pickup_location || r.origin || '').toLowerCase();
+        const drop = (r.dropoff_location || r.destination || '').toLowerCase();
+        return title.includes(q) || pickup.includes(q) || drop.includes(q);
       });
     }
 
@@ -89,10 +137,10 @@ const Home = () => {
   const handleSelectRoute = (route) => {
     navigate('/pesan', {
       state: {
-        pickup: route.pickup,
-        drop: route.drop,
-        price: route.price
-      }
+        pickup: route.pickup_location || route.origin || '',
+        drop: route.dropoff_location || route.destination || '',
+        price: Number(route.price) || 0,
+      },
     });
   };
 
@@ -101,8 +149,26 @@ const Home = () => {
     { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
     { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
     { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
-    { id: 'kuta', label: 'Kuta Area', icon: 'fa-umbrella-beach' }
+    { id: 'kuta', label: 'Kuta Area', icon: 'fa-umbrella-beach' },
   ];
+
+  if (loadingApi) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center font-bold text-sky-600">
+        <i className="fa-solid fa-circle-notch fa-spin mr-2 text-xl"></i>
+        Memuat data beranda dari server...
+      </div>
+    );
+  }
+
+  if (errorApi) {
+    return (
+      <div className="py-20 text-center text-rose-500">
+        <i className="fa-solid fa-triangle-exclamation mb-2 text-3xl"></i>
+        <p>{errorApi}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="block">
@@ -124,13 +190,13 @@ const Home = () => {
         <div className="relative z-10 mx-auto flex h-full flex-col justify-center p-[16px_4%] text-center text-white md:p-[30px_20px_24px]">
           <div>
             <a
-              href={heroData.heroData?.googleMapsUrl || 'https://maps.google.com'}
+              href={heroInfo?.googleMapsUrl || 'https://maps.google.com'}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-white/95 px-2.5 py-1 text-[0.72rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3.5 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
             >
               <i className="fa-brands fa-google text-[0.85rem] text-[#4285F4]"></i>
-              <span>{heroData.heroData?.googleRating || '5.0'} Rating</span>
+              <span>{heroInfo?.googleRating || '5.0'} Rating</span>
               <div className="flex gap-0.5 text-[0.75rem] text-amber-500">
                 <i className="fa-solid fa-star"></i>
                 <i className="fa-solid fa-star"></i>
@@ -139,16 +205,17 @@ const Home = () => {
                 <i className="fa-solid fa-star"></i>
               </div>
               <span className="text-[0.68rem] text-slate-500">
-                ({heroData.heroData?.googleReviewCount || 8} Ulasan Google)
+                ({heroInfo?.googleReviewCount || 8} Ulasan Google)
               </span>
             </a>
           </div>
 
           <h1 className="mb-1 text-[1.15rem] font-extrabold leading-tight text-white md:mb-2 md:text-[1.6rem]">
-            {heroData.heroData?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
+            {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
           </h1>
           <p className="mx-auto mb-2.5 max-w-[600px] text-[0.78rem] opacity-90 line-clamp-2 md:mb-3.5 md:text-[0.9rem] md:line-clamp-none">
-            {heroData.heroData?.subtitle || 'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.'}
+            {heroInfo?.subtitle ||
+              'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.'}
           </p>
 
           {slides.length > 1 && (
@@ -170,23 +237,13 @@ const Home = () => {
 
       {/* Rute Penjemputan Section */}
       <section className="mx-auto max-w-[1200px] px-[4%] py-3.5 md:px-[5%] md:py-6">
-        <div className="mb-4.5 text-center">
-          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-slate-900 sm:text-[1.15rem]">
-            <i className="fa-solid fa-route text-sky-600"></i>
-            Pilihan Rute Penjemputan
-          </h2>
-          <p className="mt-1 text-[0.85rem] text-slate-500">
-            Pilih kategori atau cari rute untuk menemukan estimasi harga perjalanan Anda.
-          </p>
-        </div>
-
         {/* Controls Container */}
         <div className="mb-4.5 flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-2.5">
-          <div className="relative flex w-full shrink-0 items-center md:w-[200px]">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 text-[0.75rem] text-slate-400 pointer-events-none"></i>
+          <div className="relative flex w-full shrink-0 items-center md:w-[220px]">
+            <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 text-[0.75rem] text-slate-400"></i>
             <input
               type="text"
-              className="h-[34px] w-full rounded-full border border-slate-200 bg-white pl-8 pr-7 text-[0.78rem] text-slate-700 outline-none transition-colors focus:border-sky-600"
+              className="h-[36px] w-full rounded-full border border-slate-200 bg-white pl-8 pr-7 text-[0.78rem] text-slate-700 outline-none transition-colors focus:border-sky-600"
               placeholder="Cari rute / tujuan..."
               value={searchQuery}
               onChange={handleSearchChange}
@@ -226,53 +283,64 @@ const Home = () => {
         {/* Route Cards */}
         {displayedRoutes.length > 0 ? (
           <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] sm:gap-4">
-            {displayedRoutes.map((route, idx) => (
-              <div
-                key={idx}
-                className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]"
-              >
-                <div className="relative h-[150px] overflow-hidden">
-                  <img
-                    src={route.image}
-                    alt={route.drop}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
-                  />
-                  <span className="absolute bottom-2.5 right-2.5 rounded-md bg-slate-900/85 px-2.5 py-1 text-[0.82rem] font-bold text-white">
-                    {route.priceFormatted}
-                  </span>
-                </div>
-                <div className="flex flex-grow flex-col p-[14px_16px]">
-                  <span className="mb-1.5 inline-flex items-center gap-[5px] text-[0.78rem] font-semibold text-sky-600">
-                    <i className={`fa-solid ${route.icon || 'fa-route'}`}></i> {route.badge}
-                  </span>
-                  <h4 className="mb-1.5 text-base font-bold text-slate-900">{route.title}</h4>
-                  <p className="mb-2.5 flex-grow text-[0.82rem] text-slate-500">
-                    {route.description}
-                  </p>
+            {displayedRoutes.map((route, idx) => {
+              const imageSrc = getImageUrl(route.image_url || route.image);
+              const routeTitle =
+                route.title ||
+                route.name ||
+                `${route.pickup_location || route.origin} ➔ ${route.dropoff_location || route.destination}`;
 
-                  <ul className="mb-3 flex flex-col gap-1 border-t border-dashed border-slate-100 p-0 pt-2 text-[0.74rem] text-slate-500 list-none">
-                    <li className="flex items-center">
-                      <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Max 4 Penumpang + Bagasi
-                    </li>
-                    <li className="flex items-center">
-                      <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Driver Berpengalaman
-                    </li>
-                    <li className="flex items-center">
-                      <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> AC Dingin & Nyaman
-                    </li>
-                  </ul>
+              return (
+                <div
+                  key={route.id || idx}
+                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]"
+                >
+                  <div className="relative h-[150px] overflow-hidden bg-slate-100">
+                    <img
+                      src={imageSrc}
+                      alt={routeTitle}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
+                    />
+                    <span className="absolute bottom-2.5 right-2.5 rounded-md bg-slate-900/85 px-2.5 py-1 text-[0.82rem] font-bold text-white">
+                      {formatPrice(route.price)}
+                    </span>
+                  </div>
 
-                  <button
-                    className="flex w-full items-center justify-center gap-[6px] rounded-md bg-sky-600 py-2 px-3.5 text-[0.78rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
-                    onClick={() => handleSelectRoute(route)}
-                  >
-                    <i className="fa-solid fa-car"></i>
-                    <span>Pesan Rute Ini</span>
-                  </button>
+                  <div className="flex flex-grow flex-col p-[14px_16px]">
+                    <span className="mb-1.5 inline-flex items-center gap-[5px] text-[0.78rem] font-semibold text-sky-600">
+                      <i className="fa-solid fa-route"></i> {route.estimated_time || 'Transfer Private'}
+                    </span>
+                    <h4 className="mb-1.5 text-base font-bold text-slate-900">{routeTitle}</h4>
+                    <p className="mb-2.5 flex-grow text-[0.82rem] text-slate-500">
+                      Penjemputan dari{' '}
+                      <strong className="text-slate-700">{route.pickup_location || route.origin}</strong>{' '}
+                      menuju <strong className="text-slate-700">{route.dropoff_location || route.destination}</strong>.
+                    </p>
+
+                    <ul className="mb-3 flex flex-col gap-1 border-t border-dashed border-slate-100 p-0 pt-2 text-[0.74rem] text-slate-500 list-none">
+                      <li className="flex items-center">
+                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Max 4 Penumpang + Bagasi
+                      </li>
+                      <li className="flex items-center">
+                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Driver Berpengalaman
+                      </li>
+                      <li className="flex items-center">
+                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> AC Dingin & Nyaman
+                      </li>
+                    </ul>
+
+                    <button
+                      className="flex w-full items-center justify-center gap-[6px] rounded-md bg-sky-600 py-2 px-3.5 text-[0.78rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
+                      onClick={() => handleSelectRoute(route)}
+                    >
+                      <i className="fa-solid fa-car"></i>
+                      <span>Pesan Rute Ini</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="py-[30px] text-center">

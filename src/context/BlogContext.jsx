@@ -1,22 +1,59 @@
-import React, { createContext, useContext, useState } from 'react';
+// src/context/BlogContext.jsx
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getBlogAPI } from '@/services/apiService';
 
 const BlogContext = createContext();
 
 export const BlogProvider = ({ children }) => {
-  // State terpusat agar posisi scroll / paginasi blog tidak ter-reset saat pindah halaman
+  const [articles, setArticles] = useState([]);
+  const [loadingApi, setLoadingApi] = useState(true);
+  const [errorApi, setErrorApi] = useState(null);
+
   const [visibleCount, setVisibleCount] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const fetchBlog = async () => {
+      try {
+        setLoadingApi(true);
+        const response = await getBlogAPI();
+
+        // Mengambil array data dari properti `data` response API
+        const rawArticles = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+          ? response
+          : [];
+
+        // Hanya tampilkan artikel yang sudah dipublikasikan (is_published !== false)
+        const publishedArticles = rawArticles.filter(
+          (item) => item.is_published !== false
+        );
+
+        setArticles(publishedArticles);
+      } catch (err) {
+        console.error('Blog API Error:', err);
+        setErrorApi(err.message || 'Gagal memuat artikel blog dari server');
+        setArticles([]);
+      } finally {
+        setLoadingApi(false);
+      }
+    };
+
+    fetchBlog();
+  }, []);
 
   return (
     <BlogContext.Provider
       value={{
+        articles: Array.isArray(articles) ? articles : [],
+        loadingApi,
+        errorApi,
         visibleCount,
         setVisibleCount,
-        activeCategory,
-        setActiveCategory,
         searchQuery,
-        setSearchQuery
+        setSearchQuery,
       }}
     >
       {children}
@@ -24,5 +61,4 @@ export const BlogProvider = ({ children }) => {
   );
 };
 
-// Custom hook agar mudah dipanggil di komponen mana saja
 export const useBlog = () => useContext(BlogContext);

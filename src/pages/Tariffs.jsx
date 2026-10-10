@@ -1,210 +1,149 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+// src/pages/Tariffs.jsx
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import tariffsData from '@/data/tariffs.json';
 import { useTariff } from '@/context/TariffContext';
+
+const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
 const Tariffs = () => {
   const navigate = useNavigate();
-  const {
-    visibleCount,
-    setVisibleCount,
-    activeCategory,
-    setActiveCategory,
-    searchQuery,
-    setSearchQuery
-  } = useTariff();
+  const { tariffs = [], loadingApi, errorApi } = useTariff();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const [isLoading, setIsLoading] = useState(false);
-  const observerTarget = useRef(null);
-  const getInitialLimit = () => (window.innerWidth <= 768 ? 3 : 6);
+  // Formatter URL Gambar Lengkap
+  const getImageUrl = (imgPath) => {
+    if (!imgPath) return 'https://placehold.co/600x400?text=Dafatih+Transport';
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+    return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+  };
 
-  useEffect(() => {
-    if (visibleCount === null) {
-      setVisibleCount(getInitialLimit());
-    }
-  }, [visibleCount, setVisibleCount]);
+  // Formatter Mata Uang Rupiah
+  const formatPrice = (priceVal) => {
+    const num = Number(priceVal);
+    if (isNaN(num) || num <= 0) return 'Hubungi Kami';
+    return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
+  };
 
-  const categories = tariffsData.tariffCategories || [];
-
-  const handleSelectTariff = (pickupPoint, dropPoint, routePrice) => {
+  // Handler Kirim Data Rute ke Halaman Pemesanan
+  const handleSelectRoute = (item) => {
     navigate('/pesan', {
       state: {
-        pickup: pickupPoint,
-        drop: dropPoint,
-        price: routePrice
-      }
+        pickup: item.pickup_location || item.origin || '',
+        drop: item.dropoff_location || item.destination || '',
+        price: Number(item.price) || 0,
+      },
     });
   };
 
-  const handleCategoryChange = (catId) => {
-    setActiveCategory(catId);
-    setVisibleCount(getInitialLimit());
-  };
+  // Logika Filter Pencarian
+  const filteredTariffs = (Array.isArray(tariffs) ? tariffs : []).filter((item) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    const title = (item.title || item.name || '').toLowerCase();
+    const pickup = (item.pickup_location || item.origin || '').toLowerCase();
+    const drop = (item.dropoff_location || item.destination || '').toLowerCase();
+    return title.includes(q) || pickup.includes(q) || drop.includes(q);
+  });
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setVisibleCount(getInitialLimit());
-  };
+  if (loadingApi) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center font-bold text-sky-600">
+        <i className="fa-solid fa-circle-notch fa-spin mr-2 text-xl"></i>
+        Memuat daftar tarif dari server...
+      </div>
+    );
+  }
 
-  const getFilteredRoutes = () => {
-    let routesList = [];
-    if (activeCategory === 'all') {
-      routesList = categories.flatMap((cat) =>
-        cat.routes.map((r) => ({
-          ...r,
-          pickupLoc: r.pickup || cat.pickup,
-          categoryTitle: cat.title,
-          icon: cat.icon
-        }))
-      );
-    } else {
-      const selectedCat = categories.find((cat) => cat.id === activeCategory);
-      if (selectedCat) {
-        routesList = selectedCat.routes.map((r) => ({
-          ...r,
-          pickupLoc: r.pickup || selectedCat.pickup,
-          categoryTitle: selectedCat.title,
-          icon: selectedCat.icon
-        }));
-      }
-    }
-
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      routesList = routesList.filter((r) => {
-        const dropLoc = (r.drop || r.destination || '').toLowerCase();
-        const pickupLoc = (r.pickupLoc || '').toLowerCase();
-        return dropLoc.includes(q) || pickupLoc.includes(q);
-      });
-    }
-
-    return routesList;
-  };
-
-  const filteredRoutes = getFilteredRoutes();
-  const currentLimit = visibleCount ?? getInitialLimit();
-  const displayedRoutes = filteredRoutes.slice(0, currentLimit);
-  const hasMore = currentLimit < filteredRoutes.length;
-
-  const loadMoreWithDelay = useCallback(() => {
-    if (!hasMore || isLoading) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
-      setIsLoading(false);
-    }, 800);
-  }, [hasMore, isLoading, setVisibleCount]);
+  if (errorApi) {
+    return (
+      <div className="py-20 text-center text-rose-500">
+        <i className="fa-solid fa-triangle-exclamation mb-2 text-3xl"></i>
+        <p>{errorApi}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="block w-full overflow-x-hidden">
+    <div className="block">
       {/* Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-[14px] pt-[18px] text-center text-white">
-        <h1 className="mb-0.5 text-[clamp(1.1rem,2vw+0.4rem,1.35rem)] font-extrabold">
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-7 text-center text-white">
+        <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
           Daftar Tarif Transportasi Lombok
         </h1>
-        <p className="mx-auto max-w-[550px] text-[clamp(0.75rem,0.8vw+0.3rem,0.82rem)] text-slate-100 opacity-90">
-          Rute perjalanan & harga transparan layanan antar-jemput (Maks 4 Pax + Bagasi).
+        <p className="mx-auto max-w-[550px] text-xs opacity-90 md:text-sm">
+          Pilihan rute antar-jemput privat terlengkap dengan harga terjangkau dan transparan.
         </p>
       </div>
 
-      {/* Konten Utama */}
-      <section className="mx-auto max-w-[1200px] px-[3%] pb-[80px] pt-3 sm:px-[5%] sm:py-5">
-        {/* Controls Container */}
-        <div className="mb-4.5 flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-2.5">
-          <div className="relative flex w-full shrink-0 items-center md:w-[200px]">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 text-[0.75rem] text-slate-400 pointer-events-none"></i>
+      {/* Main Content */}
+      <section className="mx-auto max-w-[1200px] px-[4%] py-6 md:px-[5%] md:py-8">
+        {/* Search Bar */}
+        <div className="mb-6 flex justify-center">
+          <div className="relative w-full max-w-md">
+            <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-400"></i>
             <input
               type="text"
-              className="h-[36px] w-full rounded-full border border-slate-200 bg-white pl-8 pr-7 text-[0.78rem] text-slate-700 outline-none transition-colors focus:border-sky-600"
-              placeholder="Cari rute / tujuan..."
+              className="w-full rounded-full border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm outline-none transition-colors focus:border-sky-600"
+              placeholder="Cari rute, penjemputan, atau tujuan..."
               value={searchQuery}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {searchQuery && (
-              <button
-                type="button"
-                className="absolute right-2.5 flex items-center justify-center border-none bg-transparent p-0 text-[0.85rem] text-slate-400"
-                onClick={() => {
-                  setSearchQuery('');
-                  setVisibleCount(getInitialLimit());
-                }}
-              >
-                &times;
-              </button>
-            )}
-          </div>
-
-          <div className="flex w-full flex-1 items-center gap-[6px] overflow-x-auto whitespace-nowrap scroll-smooth py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button
-              className={`inline-flex h-[34px] shrink-0 items-center gap-[5px] rounded-full border px-3.5 text-[0.78rem] font-bold shadow-sm transition-all duration-200 ${
-                activeCategory === 'all'
-                  ? 'border-sky-600 bg-sky-600 text-white shadow-[0_2px_8px_rgba(2,132,199,0.2)]'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-sky-600 hover:text-sky-600'
-              }`}
-              onClick={() => handleCategoryChange('all')}
-            >
-              <i className="fa-solid fa-th-large"></i>
-              <span>Semua Rute</span>
-            </button>
-
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                className={`inline-flex h-[34px] shrink-0 items-center gap-[5px] rounded-full border px-3.5 text-[0.78rem] font-bold shadow-sm transition-all duration-200 ${
-                  activeCategory === cat.id
-                    ? 'border-sky-600 bg-sky-600 text-white shadow-[0_2px_8px_rgba(2,132,199,0.2)]'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-sky-600 hover:text-sky-600'
-                }`}
-                onClick={() => handleCategoryChange(cat.id)}
-              >
-                <i className={`fa-solid ${cat.icon}`}></i>
-                <span>{cat.title}</span>
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* Tariff Cards Grid */}
-        {displayedRoutes.length > 0 ? (
-          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] sm:gap-3.5">
-            {displayedRoutes.map((route, idx) => {
-              const dropLoc = route.drop || route.destination;
+        {/* Card Grid List */}
+        {filteredTariffs.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredTariffs.map((item) => {
+              const imageSrc = getImageUrl(item.image_url || item.image);
+              const routeTitle =
+                item.title ||
+                item.name ||
+                `${item.pickup_location || item.origin} ➔ ${item.dropoff_location || item.destination}`;
+
               return (
                 <div
-                  key={idx}
-                  className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)] sm:p-3.5"
+                  key={item.id}
+                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                 >
-                  <div className="mb-2.5 flex w-full items-center justify-between gap-1.5 rounded-lg border border-dashed border-slate-200 bg-slate-50 p-2">
-                    <div className="flex flex-1 items-center gap-1.25 min-w-0" title={route.pickupLoc}>
-                      <i className="fa-solid fa-circle-dot text-[0.65rem] text-sky-600"></i>
-                      <span className="block truncate text-xs text-slate-500 sm:text-[0.78rem]">
-                        {route.pickupLoc}
-                      </span>
-                    </div>
-
-                    <i className="fa-solid fa-arrow-right shrink-0 px-0.5 text-[0.7rem] text-slate-400"></i>
-
-                    <div className="flex flex-1 items-center gap-1.25 min-w-0" title={dropLoc}>
-                      <i className="fa-solid fa-location-dot text-[0.75rem] text-amber-500"></i>
-                      <span className="block truncate text-xs font-bold text-slate-900 sm:text-[0.78rem]">
-                        {dropLoc}
-                      </span>
-                    </div>
+                  <div className="relative h-40 overflow-hidden bg-slate-100">
+                    <img
+                      src={imageSrc}
+                      alt={routeTitle}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2.5 py-1 text-xs font-extrabold text-white">
+                      {formatPrice(item.price)}
+                    </span>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-2">
-                    <div className="flex flex-col">
-                      <span className="text-[0.65rem] font-semibold text-slate-400">Harga All-In</span>
-                      <strong className="text-[0.98rem] font-extrabold text-sky-600">
-                        {route.priceFormatted}
-                      </strong>
+                  <div className="flex flex-1 flex-col justify-between p-4">
+                    <div>
+                      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-sky-600">
+                        <i className="fa-solid fa-route"></i>
+                        <span>{item.estimated_time || 'Transfer Private'}</span>
+                      </div>
+                      <h3 className="mb-2 text-base font-bold text-slate-900">{routeTitle}</h3>
+                      <p className="text-xs text-slate-500">
+                        Dari{' '}
+                        <strong className="text-slate-700">
+                          {item.pickup_location || item.origin}
+                        </strong>{' '}
+                        ke{' '}
+                        <strong className="text-slate-700">
+                          {item.dropoff_location || item.destination}
+                        </strong>
+                      </p>
                     </div>
+
                     <button
-                      className="inline-flex shrink-0 items-center gap-1.25 rounded-md bg-sky-600 px-3 py-1.5 text-[0.75rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
-                      onClick={() => handleSelectTariff(route.pickupLoc, dropLoc, route.price)}
+                      onClick={() => handleSelectRoute(item)}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-colors hover:bg-sky-700"
                     >
                       <i className="fa-solid fa-car"></i>
-                      <span>Pesan</span>
+                      <span>Pesan Rute Ini</span>
                     </button>
                   </div>
                 </div>
@@ -212,34 +151,13 @@ const Tariffs = () => {
             })}
           </div>
         ) : (
-          <div className="py-[30px] text-center">
-            <i className="fa-solid fa-car-side mb-2.5 text-[2.2rem] text-slate-300"></i>
-            <p className="text-[0.85rem] text-slate-400">
+          <div className="py-12 text-center">
+            <i className="fa-solid fa-receipt mb-3 text-3xl text-slate-300"></i>
+            <p className="text-sm text-slate-400">
               {searchQuery
-                ? `Tidak ada rute perjalanan yang cocok dengan "${searchQuery}".`
-                : 'Tidak ada tarif perjalanan yang tersedia untuk kategori ini.'}
+                ? `Tidak ada rute yang cocok dengan "${searchQuery}"`
+                : 'Belum ada data tarif yang tersedia.'}
             </p>
-          </div>
-        )}
-
-        <div ref={observerTarget} className="h-px" />
-
-        {hasMore && (
-          <div className="mt-5 flex min-h-[40px] items-center justify-center text-center">
-            {isLoading ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-[18px] py-2 text-[0.8rem] font-bold text-sky-600">
-                <i className="fa-solid fa-arrows-rotate fa-spin"></i>
-                <span>Memuat data rute baru...</span>
-              </div>
-            ) : (
-              <button
-                className="inline-flex items-center gap-1.5 rounded-full border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white"
-                onClick={loadMoreWithDelay}
-              >
-                <i className="fa-solid fa-arrows-rotate"></i>
-                <span>Tampilkan Lebih Banyak</span>
-              </button>
-            )}
           </div>
         )}
       </section>
