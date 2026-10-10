@@ -118,7 +118,7 @@ const Tariffs = () => {
                       key={item.id}
                       className="transition-colors hover:bg-slate-50/80"
                     >
-                      {/* Rute / Layanan (Tanpa font-bold di Mobile) */}
+                      {/* Rute / Layanan */}
                       <td className="px-2 py-1.5 sm:px-4 sm:py-3">
                         <div className="font-normal sm:font-bold text-[0.75rem] sm:text-sm text-slate-900 leading-tight">
                           {routeTitle}
@@ -144,7 +144,7 @@ const Tariffs = () => {
                         {item.estimated_time || 'Transfer Private'}
                       </td>
 
-                      {/* Harga (Font Semibold / Normal di Mobile) */}
+                      {/* Harga */}
                       <td className="px-2 py-1.5 sm:px-4 sm:py-3 whitespace-nowrap text-[0.72rem] sm:text-sm font-semibold sm:font-extrabold text-slate-900">
                         {formatPrice(item.price)}
                       </td>

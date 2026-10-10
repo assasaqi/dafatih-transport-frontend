@@ -96,8 +96,11 @@ const Blog = () => {
       {/* Banner */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-28 text-center text-white">
         <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
-     Tips Wisata Lombok
+          Panduan & Tips Wisata Lombok
         </h1>
+        <p className="mx-auto max-w-[550px] text-xs sm:text-sm text-slate-300 opacity-90">
+          Artikel dan informasi menarik seputar destinasi impian Anda di Pulau Lombok.
+        </p>
       </div>
 
       {/* Main Content */}
@@ -123,8 +126,8 @@ const Blog = () => {
         {displayedArticles.length > 0 ? (
           <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {displayedArticles.map((article, idx) => {
-              const imageSrc = getImageUrl(article.image_url || article.imageUrl);
-              const summaryText = article.excerpt || article.content || '';
+              const imageSrc = getImageUrl(article.image_url || article.imageUrl || article.image);
+              const summaryText = article.excerpt || article.content || article.description || '';
               const publishDate = formatDate(article.created_at || article.updated_at);
 
               return (

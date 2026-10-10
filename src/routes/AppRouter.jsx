@@ -5,7 +5,7 @@ import Tariffs from '@/pages/Tariffs';
 import Gallery from '@/pages/Gallery';
 import Blog from '@/pages/Blog';
 import Booking from '@/pages/Booking';
-import NotFound from '@/pages/NotFound'; // Komponen 404
+import NotFound from '@/pages/NotFound';
 
 const AppRouter = () => {
   return (

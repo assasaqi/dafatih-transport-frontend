@@ -70,7 +70,7 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Formatter URL Gambar Dinamis (Mengembalikan null jika tidak ada path)
+  // Formatter URL Gambar Dinamis
   const getImageUrl = (imgPath) => {
     if (!imgPath || typeof imgPath !== 'string' || imgPath.trim() === '') {
       return null;
@@ -98,8 +98,8 @@ const Home = () => {
 
     if (filter && filter !== 'all') {
       routesList = routesList.filter((r) => {
-        const pickup = (r.pickup_location || r.origin || '').toLowerCase();
-        const drop = (r.dropoff_location || r.destination || '').toLowerCase();
+        const pickup = (r.pickup_location || r.origin || r.pickup || '').toLowerCase();
+        const drop = (r.dropoff_location || r.destination || r.drop || '').toLowerCase();
         const title = (r.title || r.name || '').toLowerCase();
 
         if (filter === 'airport') {
@@ -129,8 +129,8 @@ const Home = () => {
       routesList = routesList.filter((r) => {
         if (!r) return false;
         const title = (r.title || r.name || '').toLowerCase();
-        const pickup = (r.pickup_location || r.origin || '').toLowerCase();
-        const drop = (r.dropoff_location || r.destination || '').toLowerCase();
+        const pickup = (r.pickup_location || r.origin || r.pickup || '').toLowerCase();
+        const drop = (r.dropoff_location || r.destination || r.drop || '').toLowerCase();
         return title.includes(q) || pickup.includes(q) || drop.includes(q);
       });
     }
@@ -167,8 +167,8 @@ const Home = () => {
   const handleSelectRoute = (route) => {
     navigate('/pesan', {
       state: {
-        pickup: route.pickup_location || route.origin || '',
-        drop: route.dropoff_location || route.destination || '',
+        pickup: route.pickup_location || route.origin || route.pickup || '',
+        drop: route.dropoff_location || route.destination || route.drop || '',
         price: Number(route.price) || 0,
       },
     });
@@ -201,7 +201,7 @@ const Home = () => {
 
   return (
     <div className="block">
-      {/* Hero Section (Rounded dihapus agar presisi rata) */}
+      {/* Hero Section */}
       <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
           {slides.map((slide, index) => {
@@ -241,8 +241,14 @@ const Home = () => {
           </div>
 
           <h1 className="mb-1.5 max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:mb-2 md:text-[1.8rem]">
-            {heroInfo?.title || 'Layanan Antar-Jemput'}
+            {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
           </h1>
+
+          <p className="mx-auto mb-3 max-w-[580px] text-[0.74rem] opacity-90 leading-tight md:mb-4 md:text-[0.88rem]">
+            {heroInfo?.subtitle ||
+              'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.'}
+          </p>
+
           {/* Tombol Kategori Melayang di Dalam Hero Section */}
           <div className="mt-1 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((cat) => (
@@ -318,7 +324,7 @@ const Home = () => {
               const routeTitle =
                 route.title ||
                 route.name ||
-                `${route.pickup_location || route.origin} ➔ ${route.dropoff_location || route.destination}`;
+                `${route.pickup_location || route.origin || route.pickup} ➔ ${route.dropoff_location || route.destination || route.drop}`;
 
               return (
                 <div
@@ -341,17 +347,17 @@ const Home = () => {
                       </div>
                     )}
                     <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2 py-0.5 text-[0.78rem] font-bold text-white">
-                      {formatPrice(route.price)}
+                      {route.priceFormatted || formatPrice(route.price)}
                     </span>
                   </div>
 
                   <div className="flex flex-grow flex-col p-3">
                     <span className="mb-1 inline-flex items-center gap-1 text-[0.72rem] font-semibold text-sky-600">
-                      <i className="fa-solid fa-route"></i> {route.estimated_time || 'Transfer Private'}
+                      <i className="fa-solid fa-route"></i> {route.estimated_time || route.badge || 'Transfer Private'}
                     </span>
                     <h4 className="mb-1 text-[0.88rem] font-bold text-slate-900 line-clamp-1">{routeTitle}</h4>
                     <p className="mb-2 flex-grow text-[0.78rem] leading-snug text-slate-500 line-clamp-2">
-                      Dari <strong className="text-slate-700">{route.pickup_location || route.origin}</strong> menuju <strong className="text-slate-700">{route.dropoff_location || route.destination}</strong>.
+                      Dari <strong className="text-slate-700">{route.pickup_location || route.origin || route.pickup}</strong> menuju <strong className="text-slate-700">{route.dropoff_location || route.destination || route.drop}</strong>.
                     </p>
 
                     <ul className="mb-2.5 flex flex-col gap-0.5 border-t border-dashed border-slate-100 p-0 pt-1.5 text-[0.7rem] text-slate-500 list-none">

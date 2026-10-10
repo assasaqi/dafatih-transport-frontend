@@ -46,7 +46,7 @@ const Navbar = () => {
       }`}
     >
       <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between px-[4%] md:px-[5%]">
-        {/* Container Logo dengan tinggi terkunci & perbesaran skala */}
+        {/* Container Logo */}
         <Link to="/" className="relative flex h-full items-center">
           <img
             src={logoSrc}

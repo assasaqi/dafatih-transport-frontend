@@ -77,7 +77,7 @@ const Gallery = () => {
 
   if (loadingApi) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center font-bold text-sky-600">
+      <div className="flex min-h-[50vh] items-center justify-center pt-24 font-bold text-sky-600">
         <i className="fa-solid fa-circle-notch fa-spin mr-2 text-xl"></i>
         Memuat galeri dari server...
       </div>
@@ -86,7 +86,7 @@ const Gallery = () => {
 
   if (errorApi) {
     return (
-      <div className="py-20 text-center text-rose-500">
+      <div className="py-20 pt-28 text-center text-rose-500">
         <i className="fa-solid fa-triangle-exclamation mb-2 text-3xl"></i>
         <p>{errorApi}</p>
       </div>
@@ -95,12 +95,15 @@ const Gallery = () => {
 
   return (
     <div className="block">
-      {/* Banner */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-6 pt-20 md:pt-27 text-center text-white">
-        <h1 className="mb-1 text-xl font-extrabold md:text-2xl">
-          Galeri Dokumentasi & Wisata
+      {/* Banner Header */}
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-5 pt-20 md:pt-28 text-center text-white">
+        <h1 className="mb-1 text-lg font-extrabold sm:text-xl md:text-2xl">
+          Galeri Perjalanan & Dokumentasi Wisata
         </h1>
-            </div>
+        <p className="mx-auto max-w-[580px] text-[0.78rem] sm:text-xs md:text-sm text-slate-300 opacity-90">
+          Momen kebahagiaan para tamu kami selama menjelajahi destinasi terindah di Pulau Lombok.
+        </p>
+      </div>
 
       {/* Main Content */}
       <section className="mx-auto max-w-[1200px] px-[4%] py-6 md:px-[5%] md:py-8">
@@ -111,7 +114,7 @@ const Gallery = () => {
               <button
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}
-                className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-all duration-200 ${
+                className={`rounded-full px-3.5 py-1 text-xs font-bold capitalize transition-all duration-200 ${
                   activeCategory === cat
                     ? 'bg-sky-600 text-white shadow-md'
                     : 'bg-white text-slate-600 border border-slate-200 hover:border-sky-600 hover:text-sky-600'
@@ -127,7 +130,7 @@ const Gallery = () => {
         {displayedItems.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {displayedItems.map((item, idx) => {
-              const imageSrc = getImageUrl(item.image_url || item.imageUrl);
+              const imageSrc = getImageUrl(item.image_url || item.imageUrl || item.image);
 
               return (
                 <div
@@ -135,10 +138,10 @@ const Gallery = () => {
                   onClick={() => setSelectedImage({ ...item, imageSrc })}
                   className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="relative h-56 overflow-hidden bg-slate-100">
+                  <div className="relative h-52 sm:h-56 overflow-hidden bg-slate-100">
                     <img
                       src={imageSrc}
-                      alt={item.title}
+                      alt={item.title || 'Foto Galeri'}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
@@ -151,7 +154,7 @@ const Gallery = () => {
                         {item.category}
                       </span>
                     )}
-                    <h3 className="text-sm font-bold leading-snug line-clamp-2">
+                    <h3 className="text-xs sm:text-sm font-bold leading-snug line-clamp-2">
                       {item.title}
                     </h3>
                   </div>
@@ -166,7 +169,7 @@ const Gallery = () => {
         ) : (
           <div className="py-12 text-center">
             <i className="fa-solid fa-images mb-3 text-3xl text-slate-300"></i>
-            <p className="text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-400">
               Belum ada foto galeri yang tersedia untuk kategori ini.
             </p>
           </div>
@@ -187,7 +190,7 @@ const Gallery = () => {
                 className="inline-flex items-center gap-2 rounded-full border border-sky-600 px-6 py-2 text-xs font-bold text-sky-600 transition-all hover:bg-sky-600 hover:text-white"
                 onClick={loadMoreWithDelay}
               >
-                <i className="fa-solid fa-rotate-right"></i>
+                <i className="fa-solid fa-arrows-rotate"></i>
                 <span>Tampilkan Lebih Banyak</span>
               </button>
             )}
@@ -224,7 +227,10 @@ const Gallery = () => {
                   {selectedImage.category}
                 </span>
               )}
-              <h3 className="text-base font-bold">{selectedImage.title}</h3>
+              <h3 className="text-sm sm:text-base font-bold">{selectedImage.title}</h3>
+              {selectedImage.description && (
+                <p className="mt-1 text-xs text-slate-300">{selectedImage.description}</p>
+              )}
             </div>
           </div>
         </div>
