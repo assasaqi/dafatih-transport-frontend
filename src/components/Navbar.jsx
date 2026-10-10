@@ -32,7 +32,7 @@ const Navbar = () => {
 
   const navLinks = [
     { path: '/', label: 'Beranda' },
-    { path: '/tarif', label: 'Daftar Tarif' },
+    { path: '/tarif', label: 'Tarif' },
     { path: '/galeri', label: 'Galeri' },
     { path: '/blog', label: 'Blog' },
   ];
@@ -51,7 +51,7 @@ const Navbar = () => {
           <img
             src={logoSrc}
             alt="Dafatih Transport Logo"
-            className="h-10 md:h-14 w-auto object-contain scale-125 md:scale-150 origin-left transition-all duration-300"
+            className="h-14 md:h-20 w-auto object-contain scale-125 md:scale-150 origin-left transition-all duration-300"
           />
         </Link>
 

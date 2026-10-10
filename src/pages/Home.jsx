@@ -29,10 +29,8 @@ const Home = () => {
 
   const slides = Array.isArray(heroSlides) && heroSlides.length > 0 ? heroSlides : [];
 
-  // Batas tampilan awal: 8 kartu untuk desktop (4 kolom x 2 baris), 4 kartu untuk mobile
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
-  // Set default filter ke 'airport' jika bernilai 'all'
   useEffect(() => {
     if (filter === 'all') {
       setFilter('airport');
@@ -54,7 +52,6 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [slides.length]);
 
-  // Formatter URL Gambar Lengkap
   const getImageUrl = (imgPath) => {
     if (!imgPath)
       return 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80';
@@ -62,18 +59,15 @@ const Home = () => {
     return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
   };
 
-  // Formatter Mata Uang Rupiah
   const formatPrice = (priceVal) => {
     const num = Number(priceVal);
     if (isNaN(num) || num <= 0) return 'Hubungi Kami';
     return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
   };
 
-  // Filtering rute berdasarkan kategori & pencarian
   const getFilteredRoutes = () => {
     let routesList = Array.isArray(routes) ? routes : [];
 
-    // Filter Kategori Tab
     if (filter && filter !== 'all') {
       routesList = routesList.filter((r) => {
         const pickup = (r.pickup_location || r.origin || '').toLowerCase();
@@ -102,7 +96,6 @@ const Home = () => {
       });
     }
 
-    // Filter Pencarian Teks
     const q = (searchQuery || '').trim().toLowerCase();
     if (q !== '') {
       routesList = routesList.filter((r) => {
@@ -181,7 +174,7 @@ const Home = () => {
   return (
     <div className="block">
       {/* Hero Section */}
-      <section className="relative flex aspect-[16/9] min-h-0 items-center overflow-hidden rounded-b-2xl md:aspect-auto md:min-h-[360px]">
+      <section className="relative flex min-h-[300px] md:min-h-[380px] items-center overflow-hidden rounded-b-3xl bg-slate-900 pb-4">
         <div className="absolute inset-0 z-[1]">
           {slides.map((slide, index) => (
             <div
@@ -192,48 +185,60 @@ const Home = () => {
               style={{ backgroundImage: `url('${slide.image}')` }}
             />
           ))}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/65 to-slate-900/85" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/75 to-slate-950/90" />
         </div>
 
-        <div className="relative z-10 mx-auto flex h-full flex-col justify-center p-[16px_4%] text-center text-white md:p-[30px_20px_24px]">
+        {/* Content Container */}
+        <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
           <div>
             <a
               href={heroInfo?.googleMapsUrl || 'https://maps.google.com'}
               target="_blank"
               rel="noopener noreferrer"
-              className="mb-1.5 inline-flex items-center gap-2 rounded-full bg-white/95 px-2.5 py-1 text-[0.72rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3.5 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
+              className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
             >
-              <i className="fa-brands fa-google text-[0.85rem] text-[#4285F4]"></i>
+              <i className="fa-brands fa-google text-[0.78rem] text-[#4285F4]"></i>
               <span>{heroInfo?.googleRating || '5.0'} Rating</span>
-              <div className="flex gap-0.5 text-[0.75rem] text-amber-500">
+              <div className="flex gap-0.5 text-[0.7rem] text-amber-500">
                 <i className="fa-solid fa-star"></i>
                 <i className="fa-solid fa-star"></i>
                 <i className="fa-solid fa-star"></i>
                 <i className="fa-solid fa-star"></i>
                 <i className="fa-solid fa-star"></i>
               </div>
-              <span className="text-[0.68rem] text-slate-500">
-                ({heroInfo?.googleReviewCount || 8} Ulasan Google)
-              </span>
             </a>
           </div>
 
-          <h1 className="mb-1 text-[1.15rem] font-extrabold leading-tight text-white md:mb-2 md:text-[1.6rem]">
+          <h1 className="mb-2 max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:mb-3 md:text-[1.8rem]">
             {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
           </h1>
-          <p className="mx-auto mb-2.5 max-w-[600px] text-[0.78rem] opacity-90 line-clamp-2 md:mb-3.5 md:text-[0.9rem] md:line-clamp-none">
-            {heroInfo?.subtitle ||
-              'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.'}
-          </p>
+
+          {/* Tombol Kategori Melayang di Hero Section */}
+          <div className="mt-2 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                className={`inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[0.76rem] font-bold shadow-md transition-all duration-200 ${
+                  filter === cat.id
+                    ? 'bg-sky-600 text-white shadow-sky-600/30'
+                    : 'bg-white/20 text-white backdrop-blur-md hover:bg-white/30'
+                }`}
+                onClick={() => handleFilterChange(cat.id)}
+              >
+                <i className={`fa-solid ${cat.icon}`}></i>
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
 
           {slides.length > 1 && (
-            <div className="flex justify-center gap-1.5">
+            <div className="mt-3 flex justify-center gap-1.5">
               {slides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-[6px] rounded-[3px] border-none transition-all duration-300 ${
-                    idx === currentSlide ? 'w-[18px] bg-sky-600' : 'w-[6px] bg-white/50'
+                  className={`h-[4px] rounded-[2px] border-none transition-all duration-300 ${
+                    idx === currentSlide ? 'w-[16px] bg-sky-500' : 'w-[5px] bg-white/40'
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -244,22 +249,22 @@ const Home = () => {
       </section>
 
       {/* Rute Penjemputan Section */}
-      <section className="mx-auto max-w-[1280px] px-[4%] py-3.5 md:px-[4%] md:py-6">
-        {/* Controls Container */}
-        <div className="mb-4.5 flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-2.5">
-          <div className="relative flex w-full shrink-0 items-center md:w-[220px]">
-            <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 text-[0.75rem] text-slate-400"></i>
+      <section className="mx-auto max-w-[1280px] px-[4%] py-4 md:px-[4%] md:py-6">
+        {/* Search Bar Container */}
+        <div className="mb-5 flex justify-center">
+          <div className="relative flex w-full max-w-md items-center">
+            <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 text-[0.8rem] text-slate-400"></i>
             <input
               type="text"
-              className="h-[36px] w-full rounded-full border border-slate-200 bg-white pl-8 pr-7 text-[0.78rem] text-slate-700 outline-none transition-colors focus:border-sky-600"
-              placeholder="Cari rute / tujuan..."
+              className="h-[38px] w-full rounded-full border border-slate-200 bg-white pl-9 pr-8 text-[0.8rem] text-slate-700 outline-none transition-colors focus:border-sky-600 shadow-sm"
+              placeholder="Cari rute / tujuan penjemputan..."
               value={searchQuery}
               onChange={handleSearchChange}
             />
             {searchQuery && (
               <button
                 type="button"
-                className="absolute right-2.5 flex items-center justify-center border-none bg-transparent p-0 text-[0.85rem] text-slate-400"
+                className="absolute right-3 flex items-center justify-center text-[0.85rem] text-slate-400 hover:text-slate-600"
                 onClick={() => {
                   setSearchQuery('');
                   setVisibleCount(getInitialLimit());
@@ -269,26 +274,9 @@ const Home = () => {
               </button>
             )}
           </div>
-
-          <div className="flex w-full flex-1 items-center gap-[6px] overflow-x-auto whitespace-nowrap scroll-smooth py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                className={`inline-flex h-[34px] shrink-0 items-center gap-[5px] rounded-full border px-3.5 text-[0.78rem] font-bold shadow-sm transition-all duration-200 ${
-                  filter === cat.id
-                    ? 'border-sky-600 bg-sky-600 text-white shadow-[0_2px_8px_rgba(2,132,199,0.25)]'
-                    : 'border-slate-100 bg-white text-slate-700 hover:border-sky-600 hover:text-sky-600'
-                }`}
-                onClick={() => handleFilterChange(cat.id)}
-              >
-                <i className={`fa-solid ${cat.icon}`}></i>
-                <span>{cat.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Route Cards (4 Kolom jajar x 2 Baris) */}
+        {/* Route Cards */}
         {displayedRoutes.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
             {displayedRoutes.map((route, idx) => {
@@ -330,6 +318,9 @@ const Home = () => {
                       </li>
                       <li className="flex items-center">
                         <i className="fa-solid fa-check mr-1 text-emerald-600"></i> Driver Berpengalaman
+                      </li>
+                      <li className="flex items-center">
+                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> AC Dingin & Nyaman
                       </li>
                     </ul>
 
