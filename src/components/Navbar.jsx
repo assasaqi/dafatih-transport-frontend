@@ -23,7 +23,7 @@ const Header = () => {
           Beranda
         </NavLink>
         <NavLink to="/tarif" className={navLinkClass}>
-          Daftar Tarif
+          Tarif
         </NavLink>
         <NavLink to="/galeri" className={navLinkClass}>
           Galeri

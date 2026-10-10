@@ -4,19 +4,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTariff } from '@/context/TariffContext';
 
-const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
-
 const Tariffs = () => {
   const navigate = useNavigate();
   const { tariffs = [], loadingApi, errorApi } = useTariff();
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Formatter URL Gambar Lengkap
-  const getImageUrl = (imgPath) => {
-    if (!imgPath) return 'https://placehold.co/600x400?text=Dafatih+Transport';
-    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-    return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-  };
 
   // Formatter Mata Uang Rupiah
   const formatPrice = (priceVal) => {
@@ -92,63 +83,90 @@ const Tariffs = () => {
           </div>
         </div>
 
-        {/* Card Grid List */}
+        {/* Tabel Tarif */}
         {filteredTariffs.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredTariffs.map((item) => {
-              const imageSrc = getImageUrl(item.image_url || item.image);
-              const routeTitle =
-                item.title ||
-                item.name ||
-                `${item.pickup_location || item.origin} ➔ ${item.dropoff_location || item.destination}`;
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-100 text-xs uppercase tracking-wider text-slate-700">
+                <tr>
+                  <th scope="col" className="px-4 py-3.5">
+                    Rute / Layanan
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 hidden sm:table-cell">
+                    Penjemputan
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 hidden md:table-cell">
+                    Tujuan
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 hidden lg:table-cell">
+                    Estimasi
+                  </th>
+                  <th scope="col" className="px-4 py-3.5">
+                    Harga
+                  </th>
+                  <th scope="col" className="px-4 py-3.5 text-center">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredTariffs.map((item) => {
+                  const routeTitle =
+                    item.title ||
+                    item.name ||
+                    `${item.pickup_location || item.origin} ➔ ${item.dropoff_location || item.destination}`;
 
-              return (
-                <div
-                  key={item.id}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="relative h-40 overflow-hidden bg-slate-100">
-                    <img
-                      src={imageSrc}
-                      alt={routeTitle}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2.5 py-1 text-xs font-extrabold text-white">
-                      {formatPrice(item.price)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col justify-between p-4">
-                    <div>
-                      <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-sky-600">
-                        <i className="fa-solid fa-route"></i>
-                        <span>{item.estimated_time || 'Transfer Private'}</span>
-                      </div>
-                      <h3 className="mb-2 text-base font-bold text-slate-900">{routeTitle}</h3>
-                      <p className="text-xs text-slate-500">
-                        Dari{' '}
-                        <strong className="text-slate-700">
-                          {item.pickup_location || item.origin}
-                        </strong>{' '}
-                        ke{' '}
-                        <strong className="text-slate-700">
-                          {item.dropoff_location || item.destination}
-                        </strong>
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => handleSelectRoute(item)}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 py-2 text-xs font-bold text-white transition-colors hover:bg-sky-700"
+                  return (
+                    <tr
+                      key={item.id}
+                      className="transition-colors hover:bg-slate-50/80"
                     >
-                      <i className="fa-solid fa-car"></i>
-                      <span>Pesan Rute Ini</span>
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                      {/* Rute / Layanan */}
+                      <td className="px-4 py-3">
+                        <div className="font-bold text-slate-900">
+                          {routeTitle}
+                        </div>
+                        <div className="text-[0.75rem] text-slate-400 sm:hidden">
+                          {item.pickup_location || item.origin} ➔ {item.dropoff_location || item.destination}
+                        </div>
+                      </td>
+
+                      {/* Penjemputan */}
+                      <td className="px-4 py-3 font-medium text-slate-700 hidden sm:table-cell">
+                        {item.pickup_location || item.origin || '-'}
+                      </td>
+
+                      {/* Tujuan */}
+                      <td className="px-4 py-3 font-medium text-slate-700 hidden md:table-cell">
+                        {item.dropoff_location || item.destination || '-'}
+                      </td>
+
+                      {/* Estimasi Waktu */}
+                      <td className="px-4 py-3 text-xs font-semibold text-sky-600 hidden lg:table-cell">
+                        <i className="fa-solid fa-route mr-1"></i>
+                        {item.estimated_time || 'Transfer Private'}
+                      </td>
+
+                      {/* Harga */}
+                      <td className="px-4 py-3 whitespace-nowrap font-extrabold text-slate-900">
+                        {formatPrice(item.price)}
+                      </td>
+
+                      {/* Tombol Aksi */}
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => handleSelectRoute(item)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-sky-700"
+                        >
+                          <i className="fa-solid fa-car"></i>
+                          <span>Pesan</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="py-12 text-center">

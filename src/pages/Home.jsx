@@ -17,7 +17,7 @@ const Home = () => {
     errorApi,
     visibleCount,
     setVisibleCount,
-    filter = 'all',
+    filter,
     setFilter,
     searchQuery = '',
     setSearchQuery,
@@ -28,7 +28,16 @@ const Home = () => {
   const observerTarget = useRef(null);
 
   const slides = Array.isArray(heroSlides) && heroSlides.length > 0 ? heroSlides : [];
-  const getInitialLimit = () => (window.innerWidth <= 768 ? 3 : 6);
+
+  // Batas tampilan awal: 8 kartu untuk desktop (4 kolom x 2 baris), 4 kartu untuk mobile
+  const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
+
+  // Set default filter ke 'airport' jika bernilai 'all'
+  useEffect(() => {
+    if (filter === 'all') {
+      setFilter('airport');
+    }
+  }, [filter, setFilter]);
 
   useEffect(() => {
     if (visibleCount === null) {
@@ -65,7 +74,7 @@ const Home = () => {
     let routesList = Array.isArray(routes) ? routes : [];
 
     // Filter Kategori Tab
-    if (filter !== 'all') {
+    if (filter && filter !== 'all') {
       routesList = routesList.filter((r) => {
         const pickup = (r.pickup_location || r.origin || '').toLowerCase();
         const drop = (r.dropoff_location || r.destination || '').toLowerCase();
@@ -145,7 +154,6 @@ const Home = () => {
   };
 
   const categories = [
-    { id: 'all', label: 'Semua Rute', icon: 'fa-th-large' },
     { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
     { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
     { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
@@ -236,7 +244,7 @@ const Home = () => {
       </section>
 
       {/* Rute Penjemputan Section */}
-      <section className="mx-auto max-w-[1200px] px-[4%] py-3.5 md:px-[5%] md:py-6">
+      <section className="mx-auto max-w-[1280px] px-[4%] py-3.5 md:px-[4%] md:py-6">
         {/* Controls Container */}
         <div className="mb-4.5 flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-2.5">
           <div className="relative flex w-full shrink-0 items-center md:w-[220px]">
@@ -280,9 +288,9 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Route Cards */}
+        {/* Route Cards (4 Kolom jajar x 2 Baris) */}
         {displayedRoutes.length > 0 ? (
-          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))] sm:gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
             {displayedRoutes.map((route, idx) => {
               const imageSrc = getImageUrl(route.image_url || route.image);
               const routeTitle =
@@ -295,46 +303,41 @@ const Home = () => {
                   key={route.id || idx}
                   className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]"
                 >
-                  <div className="relative h-[150px] overflow-hidden bg-slate-100">
+                  <div className="relative h-[135px] overflow-hidden bg-slate-100">
                     <img
                       src={imageSrc}
                       alt={routeTitle}
                       loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
                     />
-                    <span className="absolute bottom-2.5 right-2.5 rounded-md bg-slate-900/85 px-2.5 py-1 text-[0.82rem] font-bold text-white">
+                    <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2 py-0.5 text-[0.78rem] font-bold text-white">
                       {formatPrice(route.price)}
                     </span>
                   </div>
 
-                  <div className="flex flex-grow flex-col p-[14px_16px]">
-                    <span className="mb-1.5 inline-flex items-center gap-[5px] text-[0.78rem] font-semibold text-sky-600">
+                  <div className="flex flex-grow flex-col p-3">
+                    <span className="mb-1 inline-flex items-center gap-1 text-[0.72rem] font-semibold text-sky-600">
                       <i className="fa-solid fa-route"></i> {route.estimated_time || 'Transfer Private'}
                     </span>
-                    <h4 className="mb-1.5 text-base font-bold text-slate-900">{routeTitle}</h4>
-                    <p className="mb-2.5 flex-grow text-[0.82rem] text-slate-500">
-                      Penjemputan dari{' '}
-                      <strong className="text-slate-700">{route.pickup_location || route.origin}</strong>{' '}
-                      menuju <strong className="text-slate-700">{route.dropoff_location || route.destination}</strong>.
+                    <h4 className="mb-1 text-[0.88rem] font-bold text-slate-900 line-clamp-1">{routeTitle}</h4>
+                    <p className="mb-2 flex-grow text-[0.78rem] leading-snug text-slate-500 line-clamp-2">
+                      Dari <strong className="text-slate-700">{route.pickup_location || route.origin}</strong> menuju <strong className="text-slate-700">{route.dropoff_location || route.destination}</strong>.
                     </p>
 
-                    <ul className="mb-3 flex flex-col gap-1 border-t border-dashed border-slate-100 p-0 pt-2 text-[0.74rem] text-slate-500 list-none">
+                    <ul className="mb-2.5 flex flex-col gap-0.5 border-t border-dashed border-slate-100 p-0 pt-1.5 text-[0.7rem] text-slate-500 list-none">
                       <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Max 4 Penumpang + Bagasi
+                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> Max 4 Penumpang + Bagasi
                       </li>
                       <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> Driver Berpengalaman
-                      </li>
-                      <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1.5 text-emerald-600"></i> AC Dingin & Nyaman
+                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> Driver Berpengalaman
                       </li>
                     </ul>
 
                     <button
-                      className="flex w-full items-center justify-center gap-[6px] rounded-md bg-sky-600 py-2 px-3.5 text-[0.78rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-sky-600 py-1.5 px-3 text-[0.75rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
                       onClick={() => handleSelectRoute(route)}
                     >
-                      <i className="fa-solid fa-car"></i>
+                      <i className="fa-solid fa-car text-[0.7rem]"></i>
                       <span>Pesan Rute Ini</span>
                     </button>
                   </div>
