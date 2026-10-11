@@ -8,6 +8,7 @@ const Tariffs = () => {
   const navigate = useNavigate();
   const { tariffs = [], loadingApi, errorApi } = useTariff();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
 
   // Formatter Mata Uang Rupiah
   const formatPrice = (priceVal) => {
@@ -27,14 +28,41 @@ const Tariffs = () => {
     });
   };
 
-  // Logika Filter Pencarian
-  const filteredTariffs = (Array.isArray(tariffs) ? tariffs : []).filter((item) => {
+  const itemsList = Array.isArray(tariffs) ? tariffs : [];
+
+  // Helper Ambil Lokasi Penjemputan
+  const getPickupLocation = (item) => {
+    return item.pickup_location || item.origin || 'Lainnya';
+  };
+
+  // Ekstrak Kategori Berdasarkan Lokasi Penjemputan Unik
+  const uniqueCategories = [
+    'all',
+    ...Array.from(
+      new Set(
+        itemsList
+          .map((item) => getPickupLocation(item))
+          .filter((loc) => loc && loc !== '-')
+      )
+    ),
+  ];
+
+  // Logika Filter Pencarian & Kategori Penjemputan
+  const filteredTariffs = itemsList.filter((item) => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    const title = (item.title || item.name || '').toLowerCase();
-    const pickup = (item.pickup_location || item.origin || '').toLowerCase();
-    const drop = (item.dropoff_location || item.destination || '').toLowerCase();
-    return title.includes(q) || pickup.includes(q) || drop.includes(q);
+    const pickupLoc = getPickupLocation(item);
+
+    const matchSearch =
+      !q ||
+      (item.title || item.name || '').toLowerCase().includes(q) ||
+      (item.pickup_location || item.origin || '').toLowerCase().includes(q) ||
+      (item.dropoff_location || item.destination || '').toLowerCase().includes(q);
+
+    const matchCategory =
+      activeCategory === 'all' ||
+      pickupLoc.toLowerCase() === activeCategory.toLowerCase();
+
+    return matchSearch && matchCategory;
   });
 
   if (loadingApi) {
@@ -57,7 +85,7 @@ const Tariffs = () => {
 
   return (
     <div className="block">
-      {/* Banner - Ukuran Judul Ringkas 1 Baris di Mobile */}
+      {/* Banner Header */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[3%] pb-4 pt-20 md:pt-24 text-center text-white">
         <h1 className="mb-0.5 text-[0.82rem] sm:text-lg md:text-2xl font-extrabold whitespace-nowrap tracking-tight">
           Daftar Tarif Transportasi Lombok
@@ -66,8 +94,29 @@ const Tariffs = () => {
 
       {/* Main Content */}
       <section className="mx-auto max-w-[1200px] px-[2.5%] py-3.5 sm:px-[4%] sm:py-6 md:px-[5%] md:py-8">
+
+        {/* Tombol Kategori Berdasarkan Lokasi Penjemputan (Slidable di Mobile) */}
+        {uniqueCategories.length > 1 && (
+          <div className="mb-3 sm:mb-4 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none [ms-overflow-style:none] [scrollbar-width:none]">
+            {uniqueCategories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setActiveCategory(cat)}
+                className={`shrink-0 rounded-full px-3 py-1 text-[0.7rem] sm:text-xs font-bold capitalize transition-all duration-200 cursor-pointer ${
+                  activeCategory === cat
+                    ? 'bg-sky-600 text-white shadow-md'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-sky-600 hover:text-sky-600'
+                }`}
+              >
+                {cat === 'all' ? 'Semua Penjemputan' : cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Search Bar */}
-        <div className="mb-3 sm:mb-6 flex justify-center">
+        <div className="mb-4 sm:mb-6 flex justify-center">
           <div className="relative w-full max-w-md">
             <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-slate-400"></i>
             <input
@@ -80,7 +129,7 @@ const Tariffs = () => {
           </div>
         </div>
 
-        {/* Tabel Tarif Ringkas untuk Mobile & Desktop */}
+        {/* Tabel Tarif Ringkas */}
         {filteredTariffs.length > 0 ? (
           <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full text-left text-[0.72rem] sm:text-sm text-slate-600">
@@ -108,10 +157,11 @@ const Tariffs = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredTariffs.map((item) => {
+                  const pickupLoc = getPickupLocation(item);
                   const routeTitle =
                     item.title ||
                     item.name ||
-                    `${item.pickup_location || item.origin} ➔ ${item.dropoff_location || item.destination}`;
+                    `${pickupLoc} ➔ ${item.dropoff_location || item.destination}`;
 
                   return (
                     <tr
@@ -124,13 +174,13 @@ const Tariffs = () => {
                           {routeTitle}
                         </div>
                         <div className="text-[0.65rem] text-slate-400 mt-0.5 sm:hidden leading-snug">
-                          {item.pickup_location || item.origin} ➔ {item.dropoff_location || item.destination}
+                          {pickupLoc} ➔ {item.dropoff_location || item.destination}
                         </div>
                       </td>
 
                       {/* Penjemputan */}
                       <td className="px-3 py-3 font-medium text-slate-700 hidden sm:table-cell">
-                        {item.pickup_location || item.origin || '-'}
+                        {pickupLoc}
                       </td>
 
                       {/* Tujuan */}
@@ -149,11 +199,11 @@ const Tariffs = () => {
                         {formatPrice(item.price)}
                       </td>
 
-                      {/* Tombol Aksi (Hanya Ikon) */}
+                      {/* Tombol Aksi */}
                       <td className="px-2 py-1.5 sm:px-4 sm:py-3 text-center whitespace-nowrap">
                         <button
                           onClick={() => handleSelectRoute(item)}
-                          className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md bg-sky-600 text-white shadow-sm transition-colors hover:bg-sky-700 active:scale-95"
+                          className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md bg-sky-600 text-white shadow-sm transition-colors hover:bg-sky-700 active:scale-95 cursor-pointer"
                           title="Pesan Rute Ini"
                         >
                           <i className="fa-solid fa-car text-[0.72rem] sm:text-[0.8rem]"></i>
@@ -169,8 +219,8 @@ const Tariffs = () => {
           <div className="py-10 text-center">
             <i className="fa-solid fa-receipt mb-2 text-2xl text-slate-300"></i>
             <p className="text-xs sm:text-sm text-slate-400">
-              {searchQuery
-                ? `Tidak ada rute yang cocok dengan "${searchQuery}"`
+              {searchQuery || activeCategory !== 'all'
+                ? 'Tidak ada rute yang cocok dengan kriteria pencarian ini.'
                 : 'Belum ada data tarif yang tersedia.'}
             </p>
           </div>
