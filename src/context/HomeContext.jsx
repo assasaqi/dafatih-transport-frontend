@@ -5,16 +5,25 @@ import { getRoutesAPI } from '@/services/apiService';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
+// Mengambil seluruh berkas gambar dari folder public/images secara dinamis
+const localImageModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
+
+// Mentransformasi path /public/images/... menjadi /images/...
+const DYNAMIC_LOCAL_SLIDES = Object.keys(localImageModules).map((path) => ({
+  image: path.replace(/^\/public/, ''),
+}));
+
 const HomeContext = createContext();
 
 export const HomeProvider = ({ children }) => {
   const [heroSlides, setHeroSlides] = useState([]);
   const [heroInfo, setHeroInfo] = useState({
-    title: 'Layanan Antar-Jemput & Transportasi Lombok Terbaik',
-    subtitle: 'Spesialis antar-jemput bandara, pelabuhan, dan transfer antar destinasi di Pulau Lombok.',
+    titlePhrases: [
+      'Layanan Antar-Jemput & Transportasi Lombok Terbaik',
+      'Perjalanan Aman, Nyaman, dan Tepat Waktu',
+    ],
     googleRating: '5.0',
-    googleReviewCount: 8,
-    googleMapsUrl: 'https://maps.google.com',
+    googleMapsUrl: 'https://share.google/NqGlVDoFQU9Y4MKyp',
   });
   const [routes, setRoutes] = useState([]);
   const [loadingApi, setLoadingApi] = useState(true);
@@ -30,21 +39,21 @@ export const HomeProvider = ({ children }) => {
         setLoadingApi(true);
         const response = await getRoutesAPI();
 
-        // Mengambil array data rute dari response API
         const rawRoutes = Array.isArray(response?.data)
           ? response.data
           : Array.isArray(response)
           ? response
           : [];
 
-        // Filter rute aktif
         const activeRoutes = rawRoutes.filter((item) => item.is_active !== false);
         setRoutes(activeRoutes);
 
-        // Jika API mengembalikan heroSlides gunakan itu,
-        // jika tidak, ambil 4 gambar rute pertama sebagai slide hero dinamis
+        // Jika API mengembalikan heroSlides, gunakan itu.
+        // Jika tidak, prioritaskan gambar lokal dinamis dari folder public/images
         if (Array.isArray(response?.heroSlides) && response.heroSlides.length > 0) {
           setHeroSlides(response.heroSlides);
+        } else if (DYNAMIC_LOCAL_SLIDES.length > 0) {
+          setHeroSlides(DYNAMIC_LOCAL_SLIDES);
         } else if (activeRoutes.length > 0) {
           const dynamicSlides = activeRoutes
             .filter((r) => r.image_url || r.image)
@@ -59,21 +68,13 @@ export const HomeProvider = ({ children }) => {
                 title: r.title || r.name || `${r.pickup_location} ➔ ${r.dropoff_location}`,
               };
             });
-
-          setHeroSlides(
-            dynamicSlides.length > 0
-              ? dynamicSlides
-              : [
-                  {
-                    image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80',
-                    title: 'Layanan Antar-Jemput Lombok',
-                  },
-                ]
-          );
+          setHeroSlides(dynamicSlides);
         }
       } catch (err) {
         console.error('Home API Error:', err);
         setErrorApi(err.message || 'Gagal memuat data beranda dari server');
+        // Jika API error, tetap gunakan slide gambar lokal
+        setHeroSlides(DYNAMIC_LOCAL_SLIDES);
         setRoutes([]);
       } finally {
         setLoadingApi(false);

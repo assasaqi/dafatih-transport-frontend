@@ -7,6 +7,7 @@ import RouteCard from '@/components/RouteCard';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
+// Gambar fallback lokal
 const globImages = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
 const dynamicHeroSlides = Object.keys(globImages).map((path) => ({
   image: path.replace(/^\/public/, ''),
@@ -16,9 +17,7 @@ const LOCAL_HERO_SLIDES =
   dynamicHeroSlides.length > 0
     ? dynamicHeroSlides
     : [
-        { image: '/images/hero1.jpg' },
-        { image: '/images/hero2.jpg' },
-        { image: '/images/hero3.jpg' },
+        { image: '' },
       ];
 
 const CATEGORIES = [
@@ -44,10 +43,55 @@ const formatPrice = (priceVal) => {
   return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
 };
 
+// Komponen Efek Mengetik Judul (Typewriter Title)
+const TypewriterTitle = ({ phrases = [], fallbackTitle = '' }) => {
+  const [textIndex, setTextIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const activePhrases = Array.isArray(phrases) && phrases.length > 0 ? phrases : [];
+
+  useEffect(() => {
+    if (!activePhrases.length) return;
+    const currentPhrase = activePhrases[textIndex] || '';
+
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        if (charIndex < currentPhrase.length) {
+          setCharIndex((prev) => prev + 1);
+        } else {
+          setTimeout(() => setIsDeleting(true), 2200);
+        }
+      } else {
+        if (charIndex > 0) {
+          setCharIndex((prev) => prev - 1);
+        } else {
+          setIsDeleting(false);
+          setTextIndex((prev) => (prev + 1) % activePhrases.length);
+        }
+      }
+    }, isDeleting ? 30 : 70);
+
+    return () => clearTimeout(timeout);
+  }, [charIndex, isDeleting, textIndex, activePhrases]);
+
+  if (!activePhrases.length) {
+    return <>{fallbackTitle}</>;
+  }
+
+  return (
+    <>
+      {activePhrases[textIndex]?.substring(0, charIndex)}
+      <span className="ml-1 inline-block animate-pulse font-extrabold text-amber-500">|</span>
+    </>
+  );
+};
+
 const Home = () => {
   const navigate = useNavigate();
 
   const {
+    heroSlides = [],
     heroInfo = {},
     routes = [],
     loadingApi,
@@ -63,6 +107,8 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageErrors, setImageErrors] = useState({});
 
+  const activeHeroSlides = heroSlides.length > 0 ? heroSlides : LOCAL_HERO_SLIDES;
+
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
   useEffect(() => {
@@ -74,13 +120,13 @@ const Home = () => {
   }, [visibleCount, setVisibleCount]);
 
   useEffect(() => {
-    if (LOCAL_HERO_SLIDES.length <= 1) return;
-    const TEN_MINUTES_MS = 10 * 60 * 1000;
+    if (activeHeroSlides.length <= 1) return;
+    const TEN_SECONDS_MS = 10 * 1000;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % LOCAL_HERO_SLIDES.length);
-    }, TEN_MINUTES_MS);
+      setCurrentSlide((prev) => (prev + 1) % activeHeroSlides.length);
+    }, TEN_SECONDS_MS);
     return () => clearInterval(timer);
-  }, []);
+  }, [activeHeroSlides.length]);
 
   const handleImageError = (routeId) => {
     setImageErrors((prev) => ({ ...prev, [routeId]: true }));
@@ -182,7 +228,7 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
-          {LOCAL_HERO_SLIDES.map((slide, index) => {
+          {activeHeroSlides.map((slide, index) => {
             const slideImg = getImageUrl(slide.image);
             return (
               <div
@@ -200,30 +246,32 @@ const Home = () => {
         {/* Content Container Hero */}
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
           <div>
-            <a
-              href="https://www.google.com/search?q=dafatihtransport.com"
+             {/* Judul dengan Efek Mengetik */}
+          <h1 className="mb-2.5 min-h-[3.2rem] max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:text-[1.8rem]">
+            <TypewriterTitle
+              phrases={heroInfo?.titlePhrases || heroInfo?.typingPhrases}
+              fallbackTitle={heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
+            />
+          </h1>
+
+                   <a
+              href={heroInfo?.googleMapsUrl || ''}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
             >
               <i className="fa-brands fa-google text-[0.78rem] text-[#4285F4]"></i>
               <span>{heroInfo?.googleRating || '5.0'} Rating</span>
-              <div className="flex gap-0.5 text-[0.7rem] text-amber-500">
-                <i className="fa-solid fa-star"></i>
-                <i className="fa-solid fa-star"></i>
-                <i className="fa-solid fa-star"></i>
-                <i className="fa-solid fa-star"></i>
-                <i className="fa-solid fa-star"></i>
-              </div>
+            <div className="flex gap-0.5 text-[0.7rem] text-amber-500">
+            {[...Array(5)].map((_, i) => (
+                <i key={i} className="fa-solid fa-star" aria-hidden="true" />
+            ))}
+            </div>
             </a>
           </div>
 
-          <h1 className="mb-1.5 max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:mb-2 md:text-[1.8rem]">
-            {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
-          </h1>
-
-          {/* Tombol Kategori Melayang (Diselaras dari Kiri di Mobile) */}
-          <div className="mt-1 flex w-full max-w-[650px] items-center justify-start md:justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-4 md:px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Tombol Kategori */}
+          <div className="mt-2 flex w-full max-w-[650px] items-center justify-start md:justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-4 md:px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
@@ -240,9 +288,9 @@ const Home = () => {
             ))}
           </div>
 
-          {LOCAL_HERO_SLIDES.length > 1 && (
+          {activeHeroSlides.length > 1 && (
             <div className="mt-3 flex justify-center gap-1.5">
-              {LOCAL_HERO_SLIDES.map((_, idx) => (
+              {activeHeroSlides.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
@@ -328,7 +376,8 @@ const Home = () => {
               onClick={handleLoadMore}
             >
               <i className="fa-solid fa-arrows-rotate"></i>
-             </button>
+              <span>Tampilkan Lebih Banyak</span>
+            </button>
           </div>
         )}
       </section>
