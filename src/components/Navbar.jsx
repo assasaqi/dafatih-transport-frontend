@@ -1,5 +1,3 @@
-// src/components/Navbar.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 

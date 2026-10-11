@@ -1,12 +1,12 @@
 // src/pages/Home.jsx
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
+import RouteCard from '@/components/RouteCard';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
-// Memuat semua gambar di folder public/images/ secara dinamis (Vite)
 const globImages = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
 const dynamicHeroSlides = Object.keys(globImages).map((path) => ({
   image: path.replace(/^\/public/, ''),
@@ -20,6 +20,29 @@ const LOCAL_HERO_SLIDES =
         { image: '/images/hero2.jpg' },
         { image: '/images/hero3.jpg' },
       ];
+
+const CATEGORIES = [
+  { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
+  { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
+  { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
+  { id: 'kuta', label: 'Kuta Area', icon: 'fa-umbrella-beach' },
+];
+
+const getImageUrl = (imgPath) => {
+  if (!imgPath || typeof imgPath !== 'string' || imgPath.trim() === '') return null;
+  if (imgPath.startsWith('/images/') || imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
+    return imgPath;
+  }
+  const cleanDomain = API_BASE_DOMAIN.replace(/\/+$/, '');
+  const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
+  return `${cleanDomain}${cleanPath}`;
+};
+
+const formatPrice = (priceVal) => {
+  const num = Number(priceVal);
+  if (isNaN(num) || num <= 0) return 'Hubungi Kami';
+  return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -38,61 +61,31 @@ const Home = () => {
   } = useHome();
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-
-  const slides = LOCAL_HERO_SLIDES;
 
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
   useEffect(() => {
-    if (filter === 'all') {
-      setFilter('airport');
-    }
+    if (filter === 'all') setFilter('airport');
   }, [filter, setFilter]);
 
   useEffect(() => {
-    if (visibleCount === null) {
-      setVisibleCount(getInitialLimit());
-    }
+    if (visibleCount === null) setVisibleCount(getInitialLimit());
   }, [visibleCount, setVisibleCount]);
 
-  // Interval perpindahan slide setiap 10 menit (600.000 ms)
   useEffect(() => {
-    if (slides.length <= 1) return;
-
+    if (LOCAL_HERO_SLIDES.length <= 1) return;
     const TEN_MINUTES_MS = 10 * 60 * 1000;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setCurrentSlide((prev) => (prev + 1) % LOCAL_HERO_SLIDES.length);
     }, TEN_MINUTES_MS);
-
     return () => clearInterval(timer);
-  }, [slides.length]);
-
-  // Formatter URL Gambar Dinamis
-  const getImageUrl = (imgPath) => {
-    if (!imgPath || typeof imgPath !== 'string' || imgPath.trim() === '') {
-      return null;
-    }
-    if (imgPath.startsWith('/images/') || imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
-      return imgPath;
-    }
-    const cleanDomain = API_BASE_DOMAIN.replace(/\/+$/, '');
-    const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
-    return `${cleanDomain}${cleanPath}`;
-  };
+  }, []);
 
   const handleImageError = (routeId) => {
     setImageErrors((prev) => ({ ...prev, [routeId]: true }));
   };
 
-  const formatPrice = (priceVal) => {
-    const num = Number(priceVal);
-    if (isNaN(num) || num <= 0) return 'Hubungi Kami';
-    return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
-  };
-
-  // Optimasi: Memfilter rute menggunakan useMemo
   const filteredRoutes = useMemo(() => {
     let routesList = Array.isArray(routes) ? routes : [];
 
@@ -124,7 +117,7 @@ const Home = () => {
       });
     }
 
-    const q = (searchQuery || '').trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     if (q !== '') {
       routesList = routesList.filter((r) => {
         if (!r) return false;
@@ -142,16 +135,9 @@ const Home = () => {
   const displayedRoutes = filteredRoutes.slice(0, currentLimit);
   const hasMore = currentLimit < filteredRoutes.length;
 
-  const loadMoreWithDelay = useCallback(() => {
-    if (!hasMore || isLoading) return;
-
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
-      setIsLoading(false);
-    }, 400);
-  }, [hasMore, isLoading, setVisibleCount]);
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
+  };
 
   const handleFilterChange = (catId) => {
     setFilter(catId);
@@ -172,13 +158,6 @@ const Home = () => {
       },
     });
   };
-
-  const categories = [
-    { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
-    { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
-    { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
-    { id: 'kuta', label: 'Kuta Area', icon: 'fa-umbrella-beach' },
-  ];
 
   if (loadingApi) {
     return (
@@ -203,7 +182,7 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
-          {slides.map((slide, index) => {
+          {LOCAL_HERO_SLIDES.map((slide, index) => {
             const slideImg = getImageUrl(slide.image);
             return (
               <div
@@ -222,7 +201,7 @@ const Home = () => {
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
           <div>
             <a
-              href={'https://www.google.com/search?q=dafatihtransport.com&stick=H4sIAAAAAAAA_-NgU1I1qDBKMTZNNjezNDaySDJLNra0MqhITjNLNEg0tTRMMk82S0tLXcQqkpKYlliSmVFSlJhXXJBfVKKXnJ8LAB6UJTRAAAAA&hl=id&mat=CQ-67MPMA9qKElYBzAmVZhHo2UPj_XCAi05RSJv6JMzZ7QwpzpO0Th02NY0Rm5iMY1jIYDRpU1BfyJPs9AgkUeiCOcS3FNPK9jimGftGWhmP-U0EEhl40Kb-rBUDc5WoCA&authuser=0&ved=1t:350944'}
+              href="https://www.google.com/search?q=dafatihtransport.com"
               target="_blank"
               rel="noopener noreferrer"
               className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
@@ -245,7 +224,7 @@ const Home = () => {
 
           {/* Tombol Kategori Melayang */}
           <div className="mt-1 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {categories.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 className={`inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[0.76rem] font-bold shadow-md transition-all duration-200 ${
@@ -261,9 +240,9 @@ const Home = () => {
             ))}
           </div>
 
-          {slides.length > 1 && (
+          {LOCAL_HERO_SLIDES.length > 1 && (
             <div className="mt-3 flex justify-center gap-1.5">
-              {slides.map((_, idx) => (
+              {LOCAL_HERO_SLIDES.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
@@ -315,67 +294,17 @@ const Home = () => {
               const imageSrc = getImageUrl(rawImgPath);
               const isImageFailed = imageErrors[routeId] || !imageSrc;
 
-              const routeTitle =
-                route.title ||
-                route.name ||
-                `${route.pickup_location || route.origin || route.pickup} ➔ ${route.dropoff_location || route.destination || route.drop}`;
-
               return (
-                <div
+                <RouteCard
                   key={routeId}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_14px_rgba(0,0,0,0.08)]"
-                >
-                  <div className="relative h-[135px] overflow-hidden bg-slate-100">
-                    {!isImageFailed ? (
-                      <img
-                        src={imageSrc}
-                        alt={routeTitle}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
-                        onError={() => handleImageError(routeId)}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center bg-slate-200/70 p-2 text-slate-400">
-                        <i className="fa-regular fa-image mb-1 text-[1.5rem]"></i>
-                        <span className="text-[0.68rem] font-medium">No Image Available</span>
-                      </div>
-                    )}
-                    <span className="absolute bottom-2 right-2 rounded-md bg-slate-900/85 px-2 py-0.5 text-[0.78rem] font-bold text-white">
-                      {route.priceFormatted || formatPrice(route.price)}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-grow flex-col p-3">
-                    <span className="mb-1 inline-flex items-center gap-1 text-[0.72rem] font-semibold text-sky-600">
-                      <i className="fa-solid fa-route"></i> {route.estimated_time || route.badge || 'Transfer Private'}
-                    </span>
-                    <h4 className="mb-1 text-[0.88rem] font-bold text-slate-900 line-clamp-1">{routeTitle}</h4>
-                    <p className="mb-2 flex-grow text-[0.78rem] leading-snug text-slate-500 line-clamp-2">
-                      Dari <strong className="text-slate-700">{route.pickup_location || route.origin || route.pickup}</strong> menuju <strong className="text-slate-700">{route.dropoff_location || route.destination || route.drop}</strong>.
-                    </p>
-
-                    <ul className="mb-2.5 flex flex-col gap-0.5 border-t border-dashed border-slate-100 p-0 pt-1.5 text-[0.7rem] text-slate-500 list-none">
-                      <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> Max 4 Penumpang + Bagasi
-                      </li>
-                      <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> Driver Berpengalaman
-                      </li>
-                      <li className="flex items-center">
-                        <i className="fa-solid fa-check mr-1 text-emerald-600"></i> AC Dingin & Nyaman
-                      </li>
-                    </ul>
-
-                    <button
-                      className="flex w-full items-center justify-center gap-1.5 rounded-md bg-sky-600 py-1.5 px-3 text-[0.75rem] font-bold text-white transition-colors duration-200 hover:bg-sky-700"
-                      onClick={() => handleSelectRoute(route)}
-                    >
-                      <i className="fa-solid fa-car text-[0.7rem]"></i>
-                      <span>Pesan Rute Ini</span>
-                    </button>
-                  </div>
-                </div>
+                  route={route}
+                  routeId={routeId}
+                  imageSrc={imageSrc}
+                  isImageFailed={isImageFailed}
+                  onImageError={handleImageError}
+                  formatPrice={formatPrice}
+                  onSelect={handleSelectRoute}
+                />
               );
             })}
           </div>
@@ -393,21 +322,14 @@ const Home = () => {
         {/* Tombol Manual Load More */}
         {hasMore && (
           <div className="mt-6 flex min-h-[44px] items-center justify-center text-center">
-            {isLoading ? (
-              <div className="inline-flex items-center gap-2 rounded-[20px] bg-sky-100 px-[18px] py-2 text-[0.8rem] font-bold text-sky-600">
-                <i className="fa-solid fa-arrows-rotate fa-spin"></i>
-                <span>Memuat data rute baru...</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
-                onClick={loadMoreWithDelay}
-              >
-                <i className="fa-solid fa-arrows-rotate"></i>
-                <span>Tampilkan Lebih Banyak ({filteredRoutes.length - currentLimit} rute tersisa)</span>
-              </button>
-            )}
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
+              onClick={handleLoadMore}
+            >
+              <i className="fa-solid fa-arrows-rotate"></i>
+              <span>Tampilkan Lebih Banyak ({filteredRoutes.length - currentLimit} rute tersisa)</span>
+            </button>
           </div>
         )}
       </section>
