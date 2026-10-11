@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+/* Masukkan di bagian paling bawah berkas CSS global Anda di src/styles/ */
+
+/* Memperlebar modal time-picker agar teks Waktu (WITA) / Jam (WITA) tidak terpotong */
+.react-datepicker--time-only {
+  width: 220px !important;
+}
+
+.react-datepicker--time-only .react-datepicker__time-container,
+.react-datepicker--time-only .react-datepicker__time-box {
+  width: 100% !important;
+}
+
+.react-datepicker-time__header {
+  width: 100% !important;
+  font-size: 0.85rem !important;
+  padding: 10px 4px !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+.react-datepicker__time-list-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
