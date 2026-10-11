@@ -222,12 +222,12 @@ const Home = () => {
             {heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
           </h1>
 
-          {/* Tombol Kategori Melayang */}
-          <div className="mt-1 flex w-full max-w-[650px] items-center justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Tombol Kategori Melayang (Diselaras dari Kiri di Mobile) */}
+          <div className="mt-1 flex w-full max-w-[650px] items-center justify-start md:justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-4 md:px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
-                className={`inline-flex h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[0.76rem] font-bold shadow-md transition-all duration-200 ${
+                className={`inline-flex h-[32px] md:h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 md:px-3.5 text-[0.72rem] md:text-[0.76rem] font-bold shadow-md transition-all duration-200 ${
                   filter === cat.id
                     ? 'bg-sky-600 text-white shadow-sky-600/30'
                     : 'bg-white/20 text-white backdrop-blur-md hover:bg-white/30'
@@ -260,7 +260,7 @@ const Home = () => {
       {/* Rute Penjemputan Section */}
       <section className="mx-auto max-w-[1280px] px-[4%] py-4 md:px-[4%] md:py-6">
         {/* Search Bar Container */}
-        <div className="mb-5 flex justify-center">
+        <div className="mb-4 md:mb-5 flex justify-center">
           <div className="relative flex w-full max-w-md items-center">
             <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 text-[0.8rem] text-slate-400"></i>
             <input
@@ -285,9 +285,9 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Route Cards */}
+        {/* Grid Card 2 Kolom di Mobile */}
         {displayedRoutes.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
             {displayedRoutes.map((route, idx) => {
               const routeId = route.id || idx;
               const rawImgPath = route.image_url || route.image;
@@ -321,15 +321,14 @@ const Home = () => {
 
         {/* Tombol Manual Load More */}
         {hasMore && (
-          <div className="mt-6 flex min-h-[44px] items-center justify-center text-center">
+          <div className="mt-5 flex min-h-[44px] items-center justify-center text-center">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.78rem] md:text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
               onClick={handleLoadMore}
             >
               <i className="fa-solid fa-arrows-rotate"></i>
-              <span>Tampilkan Lebih Banyak ({filteredRoutes.length - currentLimit} rute tersisa)</span>
-            </button>
+             </button>
           </div>
         )}
       </section>

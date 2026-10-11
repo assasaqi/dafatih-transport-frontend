@@ -1,9 +1,16 @@
 // src/pages/Gallery.jsx
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGallery } from '@/context/GalleryContext';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
+
+// Helper Formatter URL Gambar
+const getImageUrl = (imgPath) => {
+  if (!imgPath) return 'https://placehold.co/600x400?text=Galeri+Dafatih';
+  if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+  return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+};
 
 const Gallery = () => {
   const {
@@ -16,9 +23,7 @@ const Gallery = () => {
     setActiveCategory,
   } = useGallery();
 
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const observerTarget = useRef(null);
 
   const getInitialLimit = () => (window.innerWidth <= 768 ? 6 : 9);
 
@@ -28,16 +33,8 @@ const Gallery = () => {
     }
   }, [visibleCount, setVisibleCount]);
 
-  // Formatter URL Gambar Lengkap
-  const getImageUrl = (imgPath) => {
-    if (!imgPath) return 'https://placehold.co/600x400?text=Galeri+Dafatih';
-    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-    return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-  };
-
   const itemsList = Array.isArray(galleryItems) ? galleryItems : [];
 
-  // Mendapatkan daftar kategori unik secara dinamis dari API
   const uniqueCategories = [
     'all',
     ...Array.from(
@@ -49,7 +46,6 @@ const Gallery = () => {
     ),
   ];
 
-  // Filtering berdasarkan kategori yang dipilih
   const filteredItems = itemsList.filter((item) => {
     if (activeCategory === 'all') return true;
     return item.category?.toLowerCase() === activeCategory.toLowerCase();
@@ -59,16 +55,9 @@ const Gallery = () => {
   const displayedItems = filteredItems.slice(0, currentLimit);
   const hasMore = currentLimit < filteredItems.length;
 
-  const loadMoreWithDelay = useCallback(() => {
-    if (!hasMore || isLoadingMore) return;
-
-    setIsLoadingMore(true);
-
-    setTimeout(() => {
-      setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
-      setIsLoadingMore(false);
-    }, 600);
-  }, [hasMore, isLoadingMore, setVisibleCount]);
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
+  };
 
   const handleCategoryChange = (cat) => {
     setActiveCategory(cat);
@@ -95,26 +84,23 @@ const Gallery = () => {
 
   return (
     <div className="block">
-      {/* Banner Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] pb-5 pt-20 md:pt-28 text-center text-white">
-        <h1 className="mb-1 text-lg font-extrabold sm:text-xl md:text-2xl">
+      {/* Page Header (Judul Ringkas 1 Baris) */}
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] py-3.5 pt-20 md:pt-24 text-center text-white">
+        <h1 className="text-sm sm:text-base md:text-xl font-extrabold truncate">
           Galeri Perjalanan & Dokumentasi Wisata
         </h1>
-        <p className="mx-auto max-w-[580px] text-[0.78rem] sm:text-xs md:text-sm text-slate-300 opacity-90">
-          Momen kebahagiaan para tamu kami selama menjelajahi destinasi terindah di Pulau Lombok.
-        </p>
       </div>
 
       {/* Main Content */}
-      <section className="mx-auto max-w-[1200px] px-[4%] py-6 md:px-[5%] md:py-8">
+      <section className="mx-auto max-w-[1200px] px-[4%] py-4 md:px-[5%] md:py-6">
         {/* Category Tabs */}
         {uniqueCategories.length > 1 && (
-          <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+          <div className="mb-4 md:mb-6 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {uniqueCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}
-                className={`rounded-full px-3.5 py-1 text-xs font-bold capitalize transition-all duration-200 ${
+                className={`rounded-full px-3 py-1 text-[0.7rem] sm:text-xs font-bold capitalize transition-all duration-200 cursor-pointer ${
                   activeCategory === cat
                     ? 'bg-sky-600 text-white shadow-md'
                     : 'bg-white text-slate-600 border border-slate-200 hover:border-sky-600 hover:text-sky-600'
@@ -126,9 +112,9 @@ const Gallery = () => {
           </div>
         )}
 
-        {/* Gallery Grid */}
+        {/* Gallery Grid (2 Kolom di Mobile) */}
         {displayedItems.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
             {displayedItems.map((item, idx) => {
               const imageSrc = getImageUrl(item.image_url || item.imageUrl || item.image);
 
@@ -136,31 +122,32 @@ const Gallery = () => {
                 <div
                   key={item.id || idx}
                   onClick={() => setSelectedImage({ ...item, imageSrc })}
-                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className="group flex flex-col cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <div className="relative h-52 sm:h-56 overflow-hidden bg-slate-100">
+                  {/* Container Gambar */}
+                  <div className="relative h-[95px] sm:h-48 overflow-hidden bg-slate-100">
                     <img
                       src={imageSrc}
                       alt={item.title || 'Foto Galeri'}
                       loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-80 transition-opacity group-hover:opacity-95" />
+                    <div className="absolute right-2 top-2 sm:right-3 sm:top-3 flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full bg-slate-900/50 text-white backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
+                      <i className="fa-solid fa-expand text-[0.55rem] sm:text-xs"></i>
+                    </div>
                   </div>
 
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                  {/* Judul & Kategori/Kegiatan di Bawah Gambar */}
+                  <div className="flex flex-col p-2.5 sm:p-3">
                     {item.category && (
-                      <span className="mb-1 inline-block rounded-md bg-sky-600/90 px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-wider">
+                      <span className="mb-1 inline-block w-fit rounded-md bg-sky-50 px-1.5 sm:px-2 py-0.5 text-[0.58rem] sm:text-[0.68rem] font-bold uppercase tracking-wider text-sky-600 border border-sky-100">
                         {item.category}
                       </span>
                     )}
-                    <h3 className="text-xs sm:text-sm font-bold leading-snug line-clamp-2">
+                    <h3 className="text-[0.75rem] sm:text-sm font-bold leading-tight sm:leading-snug text-slate-900 line-clamp-1 sm:line-clamp-2">
                       {item.title}
                     </h3>
-                  </div>
-
-                  <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
-                    <i className="fa-solid fa-expand text-xs"></i>
                   </div>
                 </div>
               );
@@ -175,25 +162,17 @@ const Gallery = () => {
           </div>
         )}
 
-        <div ref={observerTarget} className="h-px" />
-
         {/* Load More Button */}
         {hasMore && (
-          <div className="mt-8 flex items-center justify-center text-center">
-            {isLoadingMore ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-5 py-2 text-xs font-bold text-sky-600">
-                <i className="fa-solid fa-circle-notch fa-spin"></i>
-                <span>Memuat foto lainnya...</span>
-              </div>
-            ) : (
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-sky-600 px-6 py-2 text-xs font-bold text-sky-600 transition-all hover:bg-sky-600 hover:text-white"
-                onClick={loadMoreWithDelay}
-              >
-                <i className="fa-solid fa-arrows-rotate"></i>
-                <span>Tampilkan Lebih Banyak</span>
-              </button>
-            )}
+          <div className="mt-6 sm:mt-8 flex items-center justify-center text-center">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-full border border-sky-600 px-5 sm:px-6 py-1.5 sm:py-2 text-[0.75rem] sm:text-xs font-bold text-sky-600 transition-all hover:bg-sky-600 hover:text-white cursor-pointer"
+              onClick={handleLoadMore}
+            >
+              <i className="fa-solid fa-arrows-rotate"></i>
+              <span>Tampilkan Lebih Banyak ({filteredItems.length - currentLimit} foto tersisa)</span>
+            </button>
           </div>
         )}
       </section>
@@ -210,9 +189,9 @@ const Gallery = () => {
           >
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-800/80 text-white transition-colors hover:bg-rose-600"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-800/80 text-white transition-colors hover:bg-rose-600 cursor-pointer"
             >
-              <i className="fa-solid fa-xmark text-lg"></i>
+              <i className="fa-solid fa-xmark text-sm sm:text-lg"></i>
             </button>
 
             <img
@@ -221,15 +200,15 @@ const Gallery = () => {
               className="max-h-[75vh] w-full object-contain"
             />
 
-            <div className="p-4 text-white">
+            <div className="p-3 sm:p-4 text-white">
               {selectedImage.category && (
-                <span className="mb-1 inline-block rounded-md bg-sky-600 px-2 py-0.5 text-[0.68rem] font-bold uppercase">
+                <span className="mb-1 inline-block rounded-md bg-sky-600 px-2 py-0.5 text-[0.62rem] sm:text-[0.68rem] font-bold uppercase">
                   {selectedImage.category}
                 </span>
               )}
-              <h3 className="text-sm sm:text-base font-bold">{selectedImage.title}</h3>
+              <h3 className="text-xs sm:text-base font-bold">{selectedImage.title}</h3>
               {selectedImage.description && (
-                <p className="mt-1 text-xs text-slate-300">{selectedImage.description}</p>
+                <p className="mt-1 text-[0.7rem] sm:text-xs text-slate-300">{selectedImage.description}</p>
               )}
             </div>
           </div>
