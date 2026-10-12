@@ -70,6 +70,7 @@ const Booking = () => {
         pickupLoc: location.state.pickup || '',
         dropLoc: location.state.drop || '',
         price: location.state.price || 0,
+        discountAmount: location.state.discountAmount || location.state.discount || 0,
       }));
     }
   }, [location.state]);
@@ -84,19 +85,10 @@ const Booking = () => {
       return;
     }
 
-    if (name === 'discountAmount') {
-      // Ambil hanya karakter angka
-      const cleanNumber = value.replace(/\D/g, '');
-      const numVal = Number(cleanNumber) || 0;
-      setFormData((prev) => ({ ...prev, discountAmount: numVal }));
-      return;
-    }
-
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-// Handler Tanggal (Menggunakan Waktu Lokal)
   const handleDateChange = (date) => {
     setSelectedDate(date);
     if (date) {
@@ -127,10 +119,6 @@ const Booking = () => {
   const handleClear = (field) => {
     if (field === 'pickupDate') setSelectedDate(null);
     if (field === 'pickupTime') setSelectedTime(null);
-    if (field === 'discountAmount') {
-      setFormData((prev) => ({ ...prev, discountAmount: 0 }));
-      return;
-    }
     setFormData((prev) => ({ ...prev, [field]: '' }));
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
@@ -403,10 +391,10 @@ const Booking = () => {
               </div>
             </div>
 
-            {/* Diskon Tarif (Input Angka Nominal) */}
+            {/* Diskon Tarif (Otomatis / Read Only) */}
             <div className="flex flex-col gap-1 sm:gap-1.5">
               <label className="text-[0.72rem] font-bold text-slate-700 sm:text-[0.78rem]">
-                Diskon Tarif <span className="font-normal text-slate-400">(Nominal Rp / Opsional)</span>
+                Diskon Tarif <span className="font-normal text-slate-400">(Otomatis)</span>
               </label>
               <div className="relative flex w-full items-center">
                 <span className="absolute left-2.5 z-10 text-[0.72rem] font-bold text-amber-500 sm:left-3 sm:text-[0.78rem]">
@@ -415,20 +403,11 @@ const Booking = () => {
                 <input
                   type="text"
                   name="discountAmount"
-                  placeholder="0"
+                  readOnly
+                  placeholder=""
                   value={formData.discountAmount ? new Intl.NumberFormat('id-ID').format(formData.discountAmount) : ''}
-                  onChange={handleChange}
-                  className="h-[36px] w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-8 pr-7 text-[0.75rem] font-semibold text-slate-900 outline-none transition-all focus:border-sky-600 focus:bg-white focus:ring-2 focus:ring-sky-600/10 sm:h-[40px] sm:rounded-xl sm:pl-9 sm:pr-8 sm:text-[0.8rem]"
+                  className="h-[36px] w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100/70 pl-8 pr-3 text-[0.75rem] font-semibold text-slate-700 outline-none sm:h-[40px] sm:rounded-xl sm:pl-9 sm:text-[0.8rem]"
                 />
-                {formData.discountAmount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleClear('discountAmount')}
-                    className="absolute right-2 flex cursor-pointer items-center justify-center text-[0.85rem] text-slate-400 hover:text-slate-600 sm:right-2.5 sm:text-[0.9rem]"
-                  >
-                    &times;
-                  </button>
-                )}
               </div>
             </div>
 
