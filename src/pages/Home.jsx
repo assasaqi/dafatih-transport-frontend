@@ -14,6 +14,7 @@ const LOCAL_HERO_SLIDES = Object.keys(globImages).map((path) => ({
 }));
 
 const CATEGORIES = [
+  { id: 'all', label: 'Semua Perjalanan', icon: 'fa-route' },
   { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
   { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
   { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
@@ -108,10 +109,6 @@ const Home = () => {
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
   useEffect(() => {
-    if (filter === 'all') setFilter('airport');
-  }, [filter, setFilter]);
-
-  useEffect(() => {
     if (visibleCount === null) setVisibleCount(getInitialLimit());
   }, [visibleCount, setVisibleCount]);
 
@@ -134,27 +131,25 @@ const Home = () => {
 
     if (filter && filter !== 'all') {
       routesList = routesList.filter((r) => {
-        const pickup = (r.pickup_location || r.origin || r.pickup || '').toLowerCase();
-        const drop = (r.dropoff_location || r.destination || r.drop || '').toLowerCase();
-        const title = (r.title || r.name || '').toLowerCase();
+        if (!r) return false;
+
+        // Patokan penyaringan HANYA pada titik penjemputan (pickup location)
+        const pickup = String(
+          r.pickup_location || r.origin || r.pickup || r.from || ''
+        ).toLowerCase();
 
         if (filter === 'airport') {
-          return (
-            pickup.includes('airport') ||
-            pickup.includes('bandara') ||
-            pickup.includes('lia') ||
-            title.includes('bandara') ||
-            title.includes('airport')
-          );
+          const airportKeywords = ['airport', 'bandara', 'lia', 'bil', 'praya', 'bizam'];
+          return airportKeywords.some((kw) => pickup.includes(kw));
         }
         if (filter === 'bangsal') {
-          return pickup.includes('bangsal') || drop.includes('bangsal') || title.includes('bangsal');
+          return pickup.includes('bangsal');
         }
         if (filter === 'senggigi') {
-          return pickup.includes('senggigi') || drop.includes('senggigi') || title.includes('senggigi');
+          return pickup.includes('senggigi') || pickup.includes('sengigi');
         }
         if (filter === 'kuta') {
-          return pickup.includes('kuta') || drop.includes('kuta') || title.includes('kuta');
+          return pickup.includes('kuta') || pickup.includes('mandalika');
         }
         return true;
       });
@@ -164,10 +159,17 @@ const Home = () => {
     if (q !== '') {
       routesList = routesList.filter((r) => {
         if (!r) return false;
-        const title = (r.title || r.name || '').toLowerCase();
-        const pickup = (r.pickup_location || r.origin || r.pickup || '').toLowerCase();
-        const drop = (r.dropoff_location || r.destination || r.drop || '').toLowerCase();
-        return title.includes(q) || pickup.includes(q) || drop.includes(q);
+        const pickup = String(r.pickup_location || r.origin || r.pickup || '').toLowerCase();
+        const drop = String(r.dropoff_location || r.destination || r.drop || '').toLowerCase();
+        const title = String(r.title || r.name || '').toLowerCase();
+        const category = String(r.category || r.route_category || r.type || '').toLowerCase();
+
+        return (
+          title.includes(q) ||
+          pickup.includes(q) ||
+          drop.includes(q) ||
+          category.includes(q)
+        );
       });
     }
 
@@ -243,7 +245,7 @@ const Home = () => {
         {/* Content Container Hero */}
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
 
-        {/* Judul Utama dengan Efek Mengetik (Satu Baris di Mobile) */}
+          {/* Judul Utama dengan Efek Mengetik (Satu Baris di Mobile) */}
           <h1 className="mb-2.5 max-w-[800px] whitespace-nowrap text-[3.2vw] font-extrabold leading-snug text-white sm:text-[1.1rem] md:text-[1.8rem]">
             <TypewriterTitle
               phrases={heroInfo?.titlePhrases}
@@ -252,7 +254,7 @@ const Home = () => {
           </h1>
           <div>
             <a
-              href={heroInfo?.googleMapsUrl || 'https://maps.google.com'}
+              href={heroInfo?.googleMapsUrl || ''}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
