@@ -19,7 +19,7 @@ export const HomeProvider = ({ children }) => {
   const [heroSlides, setHeroSlides] = useState([]);
   const [heroInfo, setHeroInfo] = useState({
     titlePhrases: [
-      'Layanan Antar-Jemput & Transportasi Lombok Terbaik',
+      'Layanan Antar-Jemput & Transportasi Lombok',
       'Perjalanan Aman, Nyaman, dan Tepat Waktu',
     ],
     googleRating: '5.0',

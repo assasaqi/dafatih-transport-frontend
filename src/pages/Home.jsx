@@ -7,18 +7,11 @@ import RouteCard from '@/components/RouteCard';
 
 const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
 
-// Gambar fallback lokal
+// Ambil gambar lokal sebagai fallback langsung jika context belum siap
 const globImages = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
-const dynamicHeroSlides = Object.keys(globImages).map((path) => ({
+const LOCAL_HERO_SLIDES = Object.keys(globImages).map((path) => ({
   image: path.replace(/^\/public/, ''),
 }));
-
-const LOCAL_HERO_SLIDES =
-  dynamicHeroSlides.length > 0
-    ? dynamicHeroSlides
-    : [
-        { image: '' },
-      ];
 
 const CATEGORIES = [
   { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
@@ -43,7 +36,7 @@ const formatPrice = (priceVal) => {
   return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
 };
 
-// Komponen Efek Mengetik Judul (Typewriter Title)
+// Komponen Efek Mengetik Judul
 const TypewriterTitle = ({ phrases = [], fallbackTitle = '' }) => {
   const [textIndex, setTextIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
@@ -107,7 +100,10 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageErrors, setImageErrors] = useState({});
 
-  const activeHeroSlides = heroSlides.length > 0 ? heroSlides : LOCAL_HERO_SLIDES;
+  // Prioritaskan heroSlides dari context, atau gunakan gambar lokal jika kosong
+  const activeHeroSlides = useMemo(() => {
+    return heroSlides.length > 0 ? heroSlides : LOCAL_HERO_SLIDES;
+  }, [heroSlides]);
 
   const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
 
@@ -119,12 +115,13 @@ const Home = () => {
     if (visibleCount === null) setVisibleCount(getInitialLimit());
   }, [visibleCount, setVisibleCount]);
 
+  // Rotasi Slide Otomatis Setiap 5 Detik
   useEffect(() => {
     if (activeHeroSlides.length <= 1) return;
-    const TEN_SECONDS_MS = 10 * 1000;
+    const FIVE_SECONDS_MS = 5 * 1000;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % activeHeroSlides.length);
-    }, TEN_SECONDS_MS);
+    }, FIVE_SECONDS_MS);
     return () => clearInterval(timer);
   }, [activeHeroSlides.length]);
 
@@ -225,7 +222,7 @@ const Home = () => {
 
   return (
     <div className="block">
-      {/* Hero Section */}
+      {/* Hero Section dengan Slide Gambar Dinamis */}
       <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
           {activeHeroSlides.map((slide, index) => {
@@ -245,28 +242,28 @@ const Home = () => {
 
         {/* Content Container Hero */}
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
-          <div>
-             {/* Judul dengan Efek Mengetik */}
-          <h1 className="mb-2.5 min-h-[3.2rem] max-w-[800px] text-[1.1rem] font-extrabold leading-snug text-white md:text-[1.8rem]">
+
+        {/* Judul Utama dengan Efek Mengetik (Satu Baris di Mobile) */}
+          <h1 className="mb-2.5 max-w-[800px] whitespace-nowrap text-[3.2vw] font-extrabold leading-snug text-white sm:text-[1.1rem] md:text-[1.8rem]">
             <TypewriterTitle
-              phrases={heroInfo?.titlePhrases || heroInfo?.typingPhrases}
+              phrases={heroInfo?.titlePhrases}
               fallbackTitle={heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
             />
           </h1>
-
-                   <a
-              href={heroInfo?.googleMapsUrl || ''}
+          <div>
+            <a
+              href={heroInfo?.googleMapsUrl || 'https://maps.google.com'}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
             >
               <i className="fa-brands fa-google text-[0.78rem] text-[#4285F4]"></i>
               <span>{heroInfo?.googleRating || '5.0'} Rating</span>
-            <div className="flex gap-0.5 text-[0.7rem] text-amber-500">
-            {[...Array(5)].map((_, i) => (
-                <i key={i} className="fa-solid fa-star" aria-hidden="true" />
-            ))}
-            </div>
+              <div className="flex gap-0.5 text-[0.7rem] text-amber-500">
+                {[...Array(5)].map((_, i) => (
+                  <i key={i} className="fa-solid fa-star" aria-hidden="true" />
+                ))}
+              </div>
             </a>
           </div>
 
@@ -288,6 +285,7 @@ const Home = () => {
             ))}
           </div>
 
+          {/* Titik Indikator Slide */}
           {activeHeroSlides.length > 1 && (
             <div className="mt-3 flex justify-center gap-1.5">
               {activeHeroSlides.map((_, idx) => (
@@ -297,7 +295,7 @@ const Home = () => {
                   className={`h-[4px] rounded-[2px] border-none transition-all duration-300 ${
                     idx === currentSlide ? 'w-[16px] bg-sky-500' : 'w-[5px] bg-white/40'
                   }`}
-                  aria-label={`Go to slide ${idx + 1}`}
+                  aria-label={`Ke slide ${idx + 1}`}
                 />
               ))}
             </div>
@@ -307,7 +305,6 @@ const Home = () => {
 
       {/* Rute Penjemputan Section */}
       <section className="mx-auto max-w-[1280px] px-[4%] py-4 md:px-[4%] md:py-6">
-        {/* Search Bar Container */}
         <div className="mb-4 md:mb-5 flex justify-center">
           <div className="relative flex w-full max-w-md items-center">
             <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 text-[0.8rem] text-slate-400"></i>
@@ -333,7 +330,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Grid Card 2 Kolom di Mobile */}
         {displayedRoutes.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:gap-3.5">
             {displayedRoutes.map((route, idx) => {
@@ -367,7 +363,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* Tombol Manual Load More */}
         {hasMore && (
           <div className="mt-5 flex min-h-[44px] items-center justify-center text-center">
             <button
