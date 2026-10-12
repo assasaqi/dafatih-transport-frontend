@@ -257,7 +257,7 @@ const Booking = () => {
                 <input
                   type="tel"
                   name="custWa"
-                  placeholder="62-8190-7952-378"
+                  placeholder="62-xxxx-xxxx-xxx"
                   value={formData.custWa}
                   onChange={handleChange}
                   maxLength={18}

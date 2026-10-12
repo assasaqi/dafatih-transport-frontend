@@ -24,6 +24,7 @@ const Tariffs = () => {
         pickup: item.pickup_location || item.origin || '',
         drop: item.dropoff_location || item.destination || '',
         price: Number(item.price) || 0,
+        discountAmount: Number(item.discountAmount || item.discount) || 0,
       },
     });
   };
@@ -95,7 +96,7 @@ const Tariffs = () => {
       {/* Main Content */}
       <section className="mx-auto max-w-[1200px] px-[2.5%] py-3.5 sm:px-[4%] sm:py-6 md:px-[5%] md:py-8">
 
-        {/* Tombol Kategori Berdasarkan Lokasi Penjemputan (Slidable di Mobile) */}
+        {/* Tombol Kategori Berdasarkan Lokasi Penjemputan */}
         {uniqueCategories.length > 1 && (
           <div className="mb-3 sm:mb-4 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none [ms-overflow-style:none] [scrollbar-width:none]">
             {uniqueCategories.map((cat) => (
@@ -129,33 +130,34 @@ const Tariffs = () => {
           </div>
         </div>
 
-        {/* Tabel Tarif Ringkas */}
+        {/* Tabel Tarif */}
         {filteredTariffs.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg sm:rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-left text-[0.72rem] sm:text-sm text-slate-600">
-              <thead className="bg-slate-100 text-[0.62rem] sm:text-xs uppercase tracking-wider text-slate-700">
+          <div className="relative max-h-[480px] sm:max-h-[580px] overflow-auto overscroll-y-contain rounded-lg sm:rounded-xl border border-slate-200 bg-slate-100 shadow-sm focus:outline-none [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 transition-colors">
+            <table className="w-full min-w-full text-left text-[0.72rem] sm:text-sm text-slate-600 border-collapse">
+              {/* Sticky Header */}
+              <thead className="sticky top-0 z-20 bg-slate-100 text-[0.62rem] sm:text-xs uppercase tracking-wider text-slate-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                 <tr>
-                  <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3.5">
+                  <th scope="col" className="bg-slate-100 px-3 py-2.5 sm:px-4 sm:py-3.5 font-bold">
                     Rute / Layanan
                   </th>
-                  <th scope="col" className="px-3 py-3.5 hidden sm:table-cell">
+                  <th scope="col" className="bg-slate-100 px-3 py-3.5 hidden sm:table-cell font-bold">
                     Penjemputan
                   </th>
-                  <th scope="col" className="px-3 py-3.5 hidden md:table-cell">
+                  <th scope="col" className="bg-slate-100 px-3 py-3.5 hidden md:table-cell font-bold">
                     Tujuan
                   </th>
-                  <th scope="col" className="px-3 py-3.5 hidden lg:table-cell">
+                  <th scope="col" className="bg-slate-100 px-3 py-3.5 hidden lg:table-cell font-bold">
                     Estimasi
                   </th>
-                  <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3.5">
+                  <th scope="col" className="bg-slate-100 px-3 py-2.5 sm:px-4 sm:py-3.5 font-bold">
                     Harga
                   </th>
-                  <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3.5 text-center">
+                  <th scope="col" className="bg-slate-100 px-3 py-2.5 sm:px-4 sm:py-3.5 text-center font-bold">
                     Aksi
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {filteredTariffs.map((item) => {
                   const pickupLoc = getPickupLocation(item);
                   const routeTitle =
@@ -166,10 +168,10 @@ const Tariffs = () => {
                   return (
                     <tr
                       key={item.id}
-                      className="transition-colors hover:bg-slate-50/80"
+                      className="bg-white transition-colors hover:bg-slate-50/80"
                     >
                       {/* Rute / Layanan */}
-                      <td className="px-2 py-1.5 sm:px-4 sm:py-3">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3">
                         <div className="font-normal sm:font-bold text-[0.75rem] sm:text-sm text-slate-900 leading-tight">
                           {routeTitle}
                         </div>
@@ -195,13 +197,14 @@ const Tariffs = () => {
                       </td>
 
                       {/* Harga */}
-                      <td className="px-2 py-1.5 sm:px-4 sm:py-3 whitespace-nowrap text-[0.72rem] sm:text-sm font-semibold sm:font-extrabold text-slate-900">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-[0.72rem] sm:text-sm font-semibold sm:font-extrabold text-slate-900">
                         {formatPrice(item.price)}
                       </td>
 
                       {/* Tombol Aksi */}
-                      <td className="px-2 py-1.5 sm:px-4 sm:py-3 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-center whitespace-nowrap">
                         <button
+                          type="button"
                           onClick={() => handleSelectRoute(item)}
                           className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md bg-sky-600 text-white shadow-sm transition-colors hover:bg-sky-700 active:scale-95 cursor-pointer"
                           title="Pesan Rute Ini"
