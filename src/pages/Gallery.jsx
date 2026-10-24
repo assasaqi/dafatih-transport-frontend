@@ -2,15 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useGallery } from '@/context/GalleryContext';
+import { getImageUrl } from '@/services/apiService';
 
-const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
-
-// Helper Formatter URL Gambar
-const getImageUrl = (imgPath) => {
-  if (!imgPath) return 'https://placehold.co/600x400?text=Galeri+Dafatih';
-  if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-  return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-};
+const getInitialLimit = () => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 6 : 9);
 
 const Gallery = () => {
   const {
@@ -24,8 +18,6 @@ const Gallery = () => {
   } = useGallery();
 
   const [selectedImage, setSelectedImage] = useState(null);
-
-  const getInitialLimit = () => (window.innerWidth <= 768 ? 6 : 9);
 
   useEffect(() => {
     if (visibleCount === null) {
@@ -84,7 +76,7 @@ const Gallery = () => {
 
   return (
     <div className="block">
-      {/* Page Header (Judul Ringkas 1 Baris) */}
+      {/* Page Header */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] py-3.5 pt-20 md:pt-24 text-center text-white">
         <h1 className="text-sm sm:text-base md:text-xl font-extrabold truncate">
           Galeri Perjalanan & Dokumentasi Wisata
@@ -99,6 +91,7 @@ const Gallery = () => {
             {uniqueCategories.map((cat) => (
               <button
                 key={cat}
+                type="button"
                 onClick={() => handleCategoryChange(cat)}
                 className={`rounded-full px-3 py-1 text-[0.7rem] sm:text-xs font-bold capitalize transition-all duration-200 cursor-pointer ${
                   activeCategory === cat
@@ -112,7 +105,7 @@ const Gallery = () => {
           </div>
         )}
 
-        {/* Gallery Grid (2 Kolom di Mobile) */}
+        {/* Gallery Grid */}
         {displayedItems.length > 0 ? (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
             {displayedItems.map((item, idx) => {
@@ -138,7 +131,7 @@ const Gallery = () => {
                     </div>
                   </div>
 
-                  {/* Judul & Kategori/Kegiatan di Bawah Gambar */}
+                  {/* Judul & Kategori */}
                   <div className="flex flex-col p-2.5 sm:p-3">
                     {item.category && (
                       <span className="mb-1 inline-block w-fit rounded-md bg-sky-50 px-1.5 sm:px-2 py-0.5 text-[0.58rem] sm:text-[0.68rem] font-bold uppercase tracking-wider text-sky-600 border border-sky-100">
@@ -167,6 +160,7 @@ const Gallery = () => {
           <div className="mt-6 sm:mt-8 flex items-center justify-center text-center">
             <button
               type="button"
+              aria-label="Tampilkan foto galeri lebih banyak"
               className="inline-flex items-center gap-2 rounded-full border border-sky-600 px-5 sm:px-6 py-1.5 sm:py-2 text-[0.75rem] sm:text-xs font-bold text-sky-600 transition-all hover:bg-sky-600 hover:text-white cursor-pointer"
               onClick={handleLoadMore}
             >
@@ -188,6 +182,8 @@ const Gallery = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
+              aria-label="Tutup pratinjau foto"
               onClick={() => setSelectedImage(null)}
               className="absolute right-3 top-3 z-10 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-slate-800/80 text-white transition-colors hover:bg-rose-600 cursor-pointer"
             >
@@ -196,7 +192,7 @@ const Gallery = () => {
 
             <img
               src={selectedImage.imageSrc}
-              alt={selectedImage.title}
+              alt={selectedImage.title || 'Pratinjau Foto'}
               className="max-h-[75vh] w-full object-contain"
             />
 

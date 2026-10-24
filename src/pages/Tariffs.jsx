@@ -4,18 +4,23 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTariff } from '@/context/TariffContext';
 
+// Helper Formatter Mata Uang Rupiah
+const formatPrice = (priceVal) => {
+  const num = Number(priceVal);
+  if (isNaN(num) || num <= 0) return 'Hubungi Kami';
+  return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
+};
+
+// Helper Ambil Lokasi Penjemputan
+const getPickupLocation = (item) => {
+  return item.pickup_location || item.origin || 'Lainnya';
+};
+
 const Tariffs = () => {
   const navigate = useNavigate();
   const { tariffs = [], loadingApi, errorApi } = useTariff();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-
-  // Formatter Mata Uang Rupiah
-  const formatPrice = (priceVal) => {
-    const num = Number(priceVal);
-    if (isNaN(num) || num <= 0) return 'Hubungi Kami';
-    return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
-  };
 
   // Handler Kirim Data Rute ke Halaman Pemesanan
   const handleSelectRoute = (item) => {
@@ -30,11 +35,6 @@ const Tariffs = () => {
   };
 
   const itemsList = Array.isArray(tariffs) ? tariffs : [];
-
-  // Helper Ambil Lokasi Penjemputan
-  const getPickupLocation = (item) => {
-    return item.pickup_location || item.origin || 'Lainnya';
-  };
 
   // Ekstrak Kategori Berdasarkan Lokasi Penjemputan Unik
   const uniqueCategories = [
@@ -103,6 +103,7 @@ const Tariffs = () => {
               <button
                 key={cat}
                 type="button"
+                aria-label={`Filter penjemputan ${cat === 'all' ? 'semua penjemputan' : cat}`}
                 onClick={() => setActiveCategory(cat)}
                 className={`shrink-0 rounded-full px-3 py-1 text-[0.7rem] sm:text-xs font-bold capitalize transition-all duration-200 cursor-pointer ${
                   activeCategory === cat
@@ -122,7 +123,8 @@ const Tariffs = () => {
             <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm text-slate-400"></i>
             <input
               type="text"
-              className="w-full rounded-full border border-slate-300 bg-white py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 text-[0.75rem] sm:text-sm outline-none transition-colors focus:border-sky-600"
+              aria-label="Cari rute, penjemputan, atau tujuan"
+              className="w-full rounded-full border border-slate-300 bg-white py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 text-[0.75rem] sm:text-sm outline-none transition-colors focus:border-sky-600 shadow-sm"
               placeholder="Cari rute, penjemputan, atau tujuan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -205,6 +207,7 @@ const Tariffs = () => {
                       <td className="px-3 py-2 sm:px-4 sm:py-3 text-center whitespace-nowrap">
                         <button
                           type="button"
+                          aria-label={`Pesan rute ${routeTitle}`}
                           onClick={() => handleSelectRoute(item)}
                           className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md bg-sky-600 text-white shadow-sm transition-colors hover:bg-sky-700 active:scale-95 cursor-pointer"
                           title="Pesan Rute Ini"

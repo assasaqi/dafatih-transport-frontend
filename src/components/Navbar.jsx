@@ -17,7 +17,6 @@ const Navbar = () => {
       }
     };
 
-    // Menambahkan { passive: true } agar scroll tidak terhambat proses JavaScript
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -34,6 +33,7 @@ const Navbar = () => {
     { path: '/tarif', label: 'Tarif' },
     { path: '/galeri', label: 'Galeri' },
     { path: '/blog', label: 'Blog' },
+    { path: '/panduan', label: 'Panduan' },
   ];
 
   return (
@@ -56,31 +56,32 @@ const Navbar = () => {
           />
         </Link>
 
-        {/* Link Navigasi Desktop */}
-        <nav className="hidden items-center gap-7 md:flex">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.path}
-              to={link.path}
-              className={({ isActive }) =>
-                `text-sm font-bold transition-colors ${
-                  isTransparent
-                    ? isActive
-                      ? 'text-sky-400 font-extrabold'
-                      : 'text-white/90 hover:text-sky-300'
-                    : isActive
-                    ? 'text-sky-600 font-extrabold'
-                    : 'text-slate-700 hover:text-sky-600'
-                }`
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
+        {/* Wrapper Menu Navigasi & Tombol Pesan (Posisi Rata Kanan) */}
+        <div className="hidden items-center gap-6 md:flex ml-auto">
+          {/* Link Navigasi Desktop */}
+          <nav className="flex items-center gap-6">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                className={({ isActive }) =>
+                  `text-sm font-bold transition-colors ${
+                    isTransparent
+                      ? isActive
+                        ? 'text-sky-400 font-extrabold'
+                        : 'text-white/90 hover:text-sky-300'
+                      : isActive
+                      ? 'text-sky-600 font-extrabold'
+                      : 'text-slate-700 hover:text-sky-600'
+                  }`
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
 
-        {/* Tombol Pesan Desktop */}
-        <div className="hidden items-center md:flex">
+          {/* Tombol Pesan Desktop */}
           <Link
             to="/pesan"
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all ${

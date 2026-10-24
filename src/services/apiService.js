@@ -1,7 +1,15 @@
 // src/services/apiService.js
 
-const BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://dafatih-transport.rasmantech.web.id/api';
+export const BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://dafatih-transport.rasmantech.web.id/api';
+export const API_BASE_DOMAIN = BASE_URL.replace(/\/api\/?$/, '');
 const API_KEY = import.meta.env.VITE_EXTERNAL_API_KEY;
+
+// Helper Formatter URL Gambar Terpusat
+export const getImageUrl = (imgPath) => {
+  if (!imgPath) return 'https://placehold.co/600x400?text=Blog+Dafatih';
+  if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+  return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+};
 
 // Fetch wrapper terpusat
 const fetchClient = async (endpoint, options = {}) => {
@@ -31,33 +39,11 @@ const fetchClient = async (endpoint, options = {}) => {
 };
 
 // --- MODUL LAYANAN API FRONTEND ---
-
-// 1. Data Blog -> Backend GET /blogs
-export const getBlogAPI = async () => {
-  return await fetchClient('/blogs');
-};
-
-// 2. Data Galeri -> Backend GET /galleries
-export const getGalleryAPI = async () => {
-  return await fetchClient('/galleries');
-};
-
-// 3. Data Rute -> Backend GET /routes
-export const getRoutesAPI = async () => {
-  return await fetchClient('/routes');
-};
-
-// 4. Data Tarif -> Mengambil dari Backend GET /routes
-export const getTariffsAPI = async () => {
-  return await fetchClient('/routes');
-};
-
-// 5. Data Kendaraan / Armada -> Backend GET /vehicles
-export const getVehiclesAPI = async () => {
-  return await fetchClient('/vehicles');
-};
-
-// 6. Buat Pesanan Baru -> Backend POST /bookings
+export const getBlogAPI = async () => fetchClient('/blogs');
+export const getGalleryAPI = async () => fetchClient('/galleries');
+export const getRoutesAPI = async () => fetchClient('/routes');
+export const getTariffsAPI = async () => fetchClient('/routes');
+export const getVehiclesAPI = async () => fetchClient('/vehicles');
 export const createBookingAPI = async (bookingData) => {
   return await fetchClient('/bookings', {
     method: 'POST',

@@ -4,9 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import ModalSummary from '@/components/ModalSummary';
-
-const PHONE_NUMBER = '6287757004214';
 
 const initialFormState = {
   custName: '',
@@ -61,17 +58,47 @@ const Booking = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [errors, setErrors] = useState({});
-  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (location.state) {
+      const state = location.state;
       setFormData((prev) => ({
         ...prev,
-        pickupLoc: location.state.pickup || '',
-        dropLoc: location.state.drop || '',
-        price: location.state.price || 0,
-        discountAmount: location.state.discountAmount || location.state.discount || 0,
+        custName: state.custName || prev.custName,
+        custWa: state.custWa || prev.custWa,
+        pickupDate: state.pickupDate || prev.pickupDate,
+        pickupTime: state.pickupTime || prev.pickupTime,
+        pickupLoc: state.pickupLoc || state.pickup || prev.pickupLoc,
+        dropLoc: state.dropLoc || state.drop || prev.dropLoc,
+        price: state.price !== undefined ? state.price : prev.price,
+        discountAmount:
+          state.discountAmount !== undefined
+            ? state.discountAmount
+            : state.discount || prev.discountAmount,
       }));
+
+      // Restore Tanggal jika ada (Format: DD-MM-YYYY)
+      if (state.pickupDate) {
+        const parts = state.pickupDate.split('-');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          setSelectedDate(new Date(year, month, day));
+        }
+      }
+
+      // Restore Waktu jika ada (Format: HH:mm)
+      if (state.pickupTime) {
+        const parts = state.pickupTime.split(':');
+        if (parts.length === 2) {
+          const hours = parseInt(parts[0], 10);
+          const minutes = parseInt(parts[1], 10);
+          const timeObj = new Date();
+          timeObj.setHours(hours, minutes, 0, 0);
+          setSelectedTime(timeObj);
+        }
+      }
     }
   }, [location.state]);
 
@@ -160,33 +187,24 @@ const Booking = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const discountVal = Number(formData.discountAmount) || 0;
+  const finalPrice = Math.max(0, formData.price - discountVal);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (validateForm()) {
       const normalizedWa = normalizeWaNumber(formData.custWa);
-      setFormData((prev) => ({ ...prev, custWa: normalizedWa }));
-      setShowModal(true);
+      const updatedData = {
+        ...formData,
+        custWa: normalizedWa,
+        finalPrice,
+      };
+
+      // Berpindah langsung ke Halaman Ringkasan
+      navigate('/ringkasan', { state: updatedData });
     }
   };
-
-  const handleConfirmWhatsApp = () => {
-    const rawDigits = formData.custWa.replace(/\D/g, '');
-    const discountVal = Number(formData.discountAmount) || 0;
-    const finalPrice = Math.max(0, formData.price - discountVal);
-
-    let discountInfo = '';
-    if (discountVal > 0) {
-      discountInfo = `%0A*Diskon Tarif:* -Rp ${new Intl.NumberFormat('id-ID').format(discountVal)}`;
-    }
-
-    const message = `Halo Dafatih Transport, saya ingin memesan layanan antar-jemput dengan detail berikut:%0A%0A*Nama:* ${formData.custName}%0A*No. WA:* +${rawDigits}%0A*Tanggal:* ${formData.pickupDate}%0A*Waktu:* ${formData.pickupTime} WITA%0A*Penjemputan:* ${formData.pickupLoc}%0A*Tujuan:* ${formData.dropLoc}%0A*Tarif Normal:* Rp ${new Intl.NumberFormat('id-ID').format(formData.price)}${discountInfo}%0A*Total Bayar:* Rp ${new Intl.NumberFormat('id-ID').format(finalPrice)}%0A%0AMohon konfirmasinya, terima kasih.`;
-
-    window.open(`https://wa.me/${PHONE_NUMBER}?text=${message}`, '_blank');
-  };
-
-  const discountVal = Number(formData.discountAmount) || 0;
-  const finalPrice = Math.max(0, formData.price - discountVal);
 
   return (
     <div className="block">
@@ -444,29 +462,17 @@ const Booking = () => {
               </div>
             </div>
 
-            {/* Tombol Konfirmasi Pemesanan */}
+            {/* Tombol Lanjut ke Ringkasan */}
             <button
               type="submit"
               className="mt-1 inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-sky-600 text-[0.8rem] font-bold text-white shadow-md shadow-sky-600/20 transition-colors hover:bg-sky-700 sm:h-[42px] sm:rounded-xl sm:text-[0.85rem]"
             >
-              <i className="fa-brands fa-whatsapp text-[1rem] sm:text-[1.1rem]"></i>
-              <span>Konfirmasi Pemesanan</span>
+              <span>Lanjut ke Ringkasan</span>
+              <i className="fa-solid fa-arrow-right text-[0.85rem] sm:text-[0.9rem]"></i>
             </button>
           </form>
         </div>
       </section>
-
-      {/* Modal Ringkasan */}
-      {showModal && (
-        <ModalSummary
-          formData={{
-            ...formData,
-            finalPrice,
-          }}
-          onClose={() => setShowModal(false)}
-          onConfirm={handleConfirmWhatsApp}
-        />
-      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import AppRouter from '@/routes/AppRouter';
+import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
   return (
@@ -16,6 +17,9 @@ export default function App() {
         overflowX: 'hidden'
       }}
     >
+      {/* Reset posisi scroll ke paling atas setiap rute berubah */}
+      <ScrollToTop />
+
       {/* 1. Header & Navigasi Atas (Desktop) */}
       <Navbar />
 

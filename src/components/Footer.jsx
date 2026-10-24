@@ -13,14 +13,14 @@ const Footer = memo(() => {
 
         {/* Kolom 1: Profil Brand & Sosmed */}
         <div className="flex flex-col items-start text-left">
-          {/* Logo diposisikan di tengah pada mobile, rata kiri di md/desktop */}
-          <Link to="/" className="flex w-full justify-left md:justify-start">
+          {/* Container logo tetap h-14 md:h-16, gambar diperbesar secara visual dengan scale & origin-left */}
+          <Link to="/" className="flex w-full justify-start overflow-visible">
             <img
               src="/logo/logo1.png"
               alt="Dafatih Transport Logo"
               loading="lazy"
               decoding="async"
-              className="h-24 w-auto object-contain transition-opacity duration-200 hover:opacity-90 md:h-32"
+              className="h-14 md:h-16 w-auto object-contain scale-125 md:scale-135 origin-left transition-transform duration-200 hover:opacity-90"
             />
           </Link>
           <p className="mt-2 text-[0.85rem] leading-relaxed text-slate-400 text-left">
@@ -73,6 +73,11 @@ const Footer = memo(() => {
                 Blog
               </Link>
             </li>
+            <li className="text-[0.85rem]">
+              <Link to="/panduan" className="text-slate-400 no-underline transition-colors duration-200 hover:text-sky-600">
+                Panduan
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -111,7 +116,7 @@ const Footer = memo(() => {
             Lombok, NTB
           </p>
 
-          {/* Ikon WhatsApp tanpa nomor telepon */}
+          {/* Ikon WhatsApp */}
           <div className="mt-3 flex justify-start gap-2">
             <a
               href="https://wa.me/6287757004214"

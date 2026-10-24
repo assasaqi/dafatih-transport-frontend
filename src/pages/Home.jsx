@@ -4,32 +4,26 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
 import RouteCard from '@/components/RouteCard';
+import { getImageUrl } from '@/services/apiService';
 
-const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
-
-// Ambil gambar lokal sebagai fallback langsung jika context belum siap
+// Otomatis membaca semua file gambar dari folder /public/images/
 const globImages = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,svg}', { eager: true });
-const LOCAL_HERO_SLIDES = Object.keys(globImages).map((path) => ({
-  image: path.replace(/^\/public/, ''),
-}));
+
+// Ambil maksimal 3 gambar dari folder public/images untuk banner
+const PUBLIC_BANNER_SLIDES = Object.keys(globImages)
+  .slice(0, 3)
+  .map((path) => ({
+    image: path.replace(/^\/public/, ''),
+  }));
 
 const CATEGORIES = [
-  { id: 'all', label: 'Semua Perjalanan', icon: 'fa-route' },
+  // Tombol 'Semua Perjalanan' dinonaktifkan sementara via komentar
+  // { id: 'all', label: 'Semua Perjalanan', icon: 'fa-route' },
   { id: 'airport', label: 'Dari Airport', icon: 'fa-plane-arrival' },
   { id: 'bangsal', label: 'Pelabuhan Bangsal', icon: 'fa-ship' },
   { id: 'senggigi', label: 'Senggigi', icon: 'fa-anchor' },
   { id: 'kuta', label: 'Kuta Area', icon: 'fa-umbrella-beach' },
 ];
-
-const getImageUrl = (imgPath) => {
-  if (!imgPath || typeof imgPath !== 'string' || imgPath.trim() === '') return null;
-  if (imgPath.startsWith('/images/') || imgPath.startsWith('http://') || imgPath.startsWith('https://')) {
-    return imgPath;
-  }
-  const cleanDomain = API_BASE_DOMAIN.replace(/\/+$/, '');
-  const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
-  return `${cleanDomain}${cleanPath}`;
-};
 
 const formatPrice = (priceVal) => {
   const num = Number(priceVal);
@@ -37,13 +31,18 @@ const formatPrice = (priceVal) => {
   return `Rp ${new Intl.NumberFormat('id-ID').format(num)}`;
 };
 
+const getInitialLimit = () => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 4 : 8);
+
 // Komponen Efek Mengetik Judul
 const TypewriterTitle = ({ phrases = [], fallbackTitle = '' }) => {
   const [textIndex, setTextIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const activePhrases = Array.isArray(phrases) && phrases.length > 0 ? phrases : [];
+  const activePhrases = useMemo(
+    () => (Array.isArray(phrases) && phrases.length > 0 ? phrases : []),
+    [phrases]
+  );
 
   useEffect(() => {
     if (!activePhrases.length) return;
@@ -85,7 +84,6 @@ const Home = () => {
   const navigate = useNavigate();
 
   const {
-    heroSlides = [],
     heroInfo = {},
     routes = [],
     loadingApi,
@@ -101,24 +99,19 @@ const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageErrors, setImageErrors] = useState({});
 
-  // Prioritaskan heroSlides dari context, atau gunakan gambar lokal jika kosong
-  const activeHeroSlides = useMemo(() => {
-    return heroSlides.length > 0 ? heroSlides : LOCAL_HERO_SLIDES;
-  }, [heroSlides]);
-
-  const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 8);
+  const activeHeroSlides = PUBLIC_BANNER_SLIDES;
 
   useEffect(() => {
     if (visibleCount === null) setVisibleCount(getInitialLimit());
   }, [visibleCount, setVisibleCount]);
 
-  // Rotasi Slide Otomatis Setiap 5 Detik
+  // Rotasi Slide Otomatis Setiap 1 Menit (60.000 ms)
   useEffect(() => {
     if (activeHeroSlides.length <= 1) return;
-    const FIVE_SECONDS_MS = 5 * 1000;
+    const ONE_MINUTE_MS = 60 * 1000;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % activeHeroSlides.length);
-    }, FIVE_SECONDS_MS);
+    }, ONE_MINUTE_MS);
     return () => clearInterval(timer);
   }, [activeHeroSlides.length]);
 
@@ -133,7 +126,6 @@ const Home = () => {
       routesList = routesList.filter((r) => {
         if (!r) return false;
 
-        // Patokan penyaringan HANYA pada titik penjemputan (pickup location)
         const pickup = String(
           r.pickup_location || r.origin || r.pickup || r.from || ''
         ).toLowerCase();
@@ -224,40 +216,37 @@ const Home = () => {
 
   return (
     <div className="block">
-      {/* Hero Section dengan Slide Gambar Dinamis */}
-      <section className="relative flex min-h-[310px] md:min-h-[380px] items-center overflow-hidden bg-slate-900 pb-5">
+      {/* Hero Section Banner */}
+      <section className="relative flex min-h-[330px] md:min-h-[400px] items-center overflow-hidden bg-slate-900 pb-5">
         <div className="absolute inset-0 z-[1]">
-          {activeHeroSlides.map((slide, index) => {
-            const slideImg = getImageUrl(slide.image);
-            return (
-              <div
-                key={index}
-                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                  index === currentSlide ? 'opacity-100' : 'opacity-0'
-                }`}
-                style={{ backgroundImage: slideImg ? `url('${slideImg}')` : 'none' }}
-              />
-            );
-          })}
+          {activeHeroSlides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ backgroundImage: `url('${slide.image}')` }}
+            />
+          ))}
           <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/75 to-slate-950/90" />
         </div>
 
         {/* Content Container Hero */}
         <div className="relative z-10 mx-auto flex h-full w-full flex-col items-center justify-center px-[4%] pt-20 pb-4 text-center text-white md:px-[5%] md:pt-24 md:pb-6">
-
-          {/* Judul Utama dengan Efek Mengetik (Satu Baris di Mobile) */}
-          <h1 className="mb-2.5 max-w-[800px] whitespace-nowrap text-[3.2vw] font-extrabold leading-snug text-white sm:text-[1.1rem] md:text-[1.8rem]">
+          <h1 className="mb-2 max-w-[800px] whitespace-nowrap text-[3.2vw] font-extrabold leading-snug text-white sm:text-[1.1rem] md:text-[1.8rem]">
             <TypewriterTitle
               phrases={heroInfo?.titlePhrases}
               fallbackTitle={heroInfo?.title || 'Layanan Antar-Jemput & Transportasi Lombok Terbaik'}
             />
           </h1>
+
           <div>
             <a
-              href={heroInfo?.googleMapsUrl || ''}
+              href={heroInfo?.googleMapsUrl || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-3 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
+              aria-label="Lihat ulasan Google Maps"
+              className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-bold text-slate-900 shadow-md no-underline transition-transform duration-200 hover:-translate-y-0.5 md:mb-4 md:px-3.5 md:py-1.5 md:text-[0.78rem]"
             >
               <i className="fa-brands fa-google text-[0.78rem] text-[#4285F4]"></i>
               <span>{heroInfo?.googleRating || '5.0'} Rating</span>
@@ -269,35 +258,54 @@ const Home = () => {
             </a>
           </div>
 
-          {/* Tombol Kategori */}
-          <div className="mt-2 flex w-full max-w-[650px] items-center justify-start md:justify-center gap-1.5 overflow-x-auto whitespace-nowrap py-1 px-4 md:px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                className={`inline-flex h-[32px] md:h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 md:px-3.5 text-[0.72rem] md:text-[0.76rem] font-bold shadow-md transition-all duration-200 ${
-                  filter === cat.id
-                    ? 'bg-sky-600 text-white shadow-sky-600/30'
-                    : 'bg-white/20 text-white backdrop-blur-md hover:bg-white/30'
-                }`}
-                onClick={() => handleFilterChange(cat.id)}
-              >
-                <i className={`fa-solid ${cat.icon}`}></i>
-                <span>{cat.label}</span>
-              </button>
-            ))}
+          {/* Tombol Kategori Desain Lingkaran Rata Tengah */}
+          <div className="mt-2 flex w-full max-w-[700px] items-center justify-center gap-3.5 md:gap-6 overflow-x-auto py-2 px-4 md:px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {CATEGORIES.map((cat) => {
+              const isActive = filter === cat.id;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  aria-label={`Filter rute kategori ${cat.label}`}
+                  className="group flex flex-col items-center gap-1.5 shrink-0 cursor-pointer border-none bg-transparent outline-none"
+                  onClick={() => handleFilterChange(cat.id)}
+                >
+                  {/* Lingkaran Ikon */}
+                  <div
+                    className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full text-sm sm:text-base transition-all duration-300 shadow-md ${
+                      isActive
+                        ? 'bg-sky-600 text-white ring-2 ring-sky-400 ring-offset-2 ring-offset-slate-900 scale-105 shadow-sky-600/40'
+                        : 'bg-white/20 text-white backdrop-blur-md hover:bg-white/30 hover:scale-105'
+                    }`}
+                  >
+                    <i className={`fa-solid ${cat.icon}`}></i>
+                  </div>
+                  {/* Teks Kategori di Bawah */}
+                  <span
+                    className={`text-[0.65rem] sm:text-[0.72rem] tracking-tight transition-colors duration-200 ${
+                      isActive ? 'font-bold text-sky-400' : 'font-medium text-slate-200 group-hover:text-white'
+                    }`}
+                  >
+                    {cat.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Titik Indikator Slide */}
+          {/* Indikator Slide Banner */}
           {activeHeroSlides.length > 1 && (
-            <div className="mt-3 flex justify-center gap-1.5">
+            <div className="mt-4 flex justify-center gap-1.5">
               {activeHeroSlides.map((_, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-[4px] rounded-[2px] border-none transition-all duration-300 ${
+                  className={`h-[4px] rounded-[2px] border-none transition-all duration-300 cursor-pointer ${
                     idx === currentSlide ? 'w-[16px] bg-sky-500' : 'w-[5px] bg-white/40'
                   }`}
-                  aria-label={`Ke slide ${idx + 1}`}
+                  aria-label={`Pindah ke banner slide ${idx + 1}`}
                 />
               ))}
             </div>
@@ -312,6 +320,7 @@ const Home = () => {
             <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 text-[0.8rem] text-slate-400"></i>
             <input
               type="text"
+              aria-label="Cari rute atau tujuan penjemputan"
               className="h-[38px] w-full rounded-full border border-slate-200 bg-white pl-9 pr-8 text-[0.8rem] text-slate-700 outline-none transition-colors focus:border-sky-600 shadow-sm"
               placeholder="Cari rute / tujuan penjemputan..."
               value={searchQuery}
@@ -320,7 +329,8 @@ const Home = () => {
             {searchQuery && (
               <button
                 type="button"
-                className="absolute right-3 flex items-center justify-center text-[0.85rem] text-slate-400 hover:text-slate-600"
+                aria-label="Hapus pencarian"
+                className="absolute right-3 flex items-center justify-center text-[0.85rem] text-slate-400 hover:text-slate-600 cursor-pointer"
                 onClick={() => {
                   setSearchQuery('');
                   setVisibleCount(getInitialLimit());
@@ -369,6 +379,7 @@ const Home = () => {
           <div className="mt-5 flex min-h-[44px] items-center justify-center text-center">
             <button
               type="button"
+              aria-label="Tampilkan rute perjalanan lebih banyak"
               className="inline-flex items-center gap-1.5 rounded-[30px] border border-sky-600 bg-transparent px-5 py-2 text-[0.78rem] md:text-[0.8rem] font-semibold text-sky-600 transition-all duration-200 hover:bg-sky-600 hover:text-white cursor-pointer"
               onClick={handleLoadMore}
             >

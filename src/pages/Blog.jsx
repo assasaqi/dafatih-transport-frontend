@@ -1,16 +1,9 @@
 // src/pages/Blog.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useBlog } from '@/context/BlogContext';
-
-const API_BASE_DOMAIN = 'https://dafatih-transport.rasmantech.web.id';
-
-// Helper Formatter URL Gambar
-const getImageUrl = (imgPath) => {
-  if (!imgPath) return 'https://placehold.co/600x400?text=Blog+Dafatih';
-  if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-  return `${API_BASE_DOMAIN}${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-};
+import { getImageUrl } from '@/services/apiService';
 
 // Helper Formatter Tanggal Indonesia
 const formatDate = (dateString) => {
@@ -27,6 +20,8 @@ const formatDate = (dateString) => {
   }
 };
 
+const getInitialLimit = () => (typeof window !== 'undefined' && window.innerWidth <= 768 ? 4 : 6);
+
 const Blog = () => {
   const {
     articles = [],
@@ -37,8 +32,6 @@ const Blog = () => {
     searchQuery,
     setSearchQuery,
   } = useBlog();
-
-  const getInitialLimit = () => (window.innerWidth <= 768 ? 4 : 6);
 
   useEffect(() => {
     if (visibleCount === null) {
@@ -83,7 +76,7 @@ const Blog = () => {
 
   return (
     <div className="block">
-      {/* Page Header (Judul Ringkas 1 Baris) */}
+      {/* Page Header */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 px-[5%] py-3.5 pt-20 md:pt-24 text-center text-white">
         <h1 className="text-sm sm:text-base md:text-xl font-extrabold truncate">
           Panduan & Tips Wisata Lombok
@@ -109,13 +102,14 @@ const Blog = () => {
           </div>
         </div>
 
-        {/* Article Cards Grid (2 Kolom di Mobile Sesuai RouteCard) */}
+        {/* Article Cards Grid */}
         {displayedArticles.length > 0 ? (
           <div className="grid grid-cols-2 items-stretch gap-2.5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
             {displayedArticles.map((article, idx) => {
               const imageSrc = getImageUrl(article.image_url || article.imageUrl || article.image);
               const summaryText = article.excerpt || article.content || article.description || '';
               const publishDate = formatDate(article.created_at || article.updated_at);
+              const articleSlug = article.slug || article.id || idx;
 
               return (
                 <article
@@ -123,15 +117,15 @@ const Blog = () => {
                   className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {/* Container Gambar Kartu */}
-                  <div className="relative h-[95px] sm:h-44 overflow-hidden bg-slate-100">
+                  <Link to={`/blog/${articleSlug}`} className="relative h-[95px] sm:h-44 overflow-hidden bg-slate-100 block">
                     <img
                       src={imageSrc}
-                      alt={article.title}
+                      alt={article.title || 'Artikel Blog'}
                       loading="lazy"
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </div>
+                  </Link>
 
                   {/* Isi Kartu */}
                   <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-4">
@@ -143,7 +137,9 @@ const Blog = () => {
                         </div>
                       )}
                       <h3 className="mb-1 text-[0.75rem] sm:text-base font-bold leading-snug text-slate-900 line-clamp-1">
-                        {article.title}
+                        <Link to={`/blog/${articleSlug}`} className="hover:text-sky-600 transition-colors">
+                          {article.title}
+                        </Link>
                       </h3>
                       <p className="text-[0.68rem] sm:text-xs leading-relaxed text-slate-500 line-clamp-2 hidden sm:block">
                         {summaryText}
@@ -151,10 +147,13 @@ const Blog = () => {
                     </div>
 
                     <div className="mt-2 sm:mt-4 border-t border-slate-100 pt-2 sm:pt-3 text-right">
-                      <span className="inline-flex items-center gap-1 text-[0.68rem] sm:text-xs font-bold text-sky-600 transition-colors group-hover:text-sky-700">
+                      <Link
+                        to={`/blog/${articleSlug}`}
+                        className="inline-flex items-center gap-1 text-[0.68rem] sm:text-xs font-bold text-sky-600 transition-colors hover:text-sky-700"
+                      >
                         <span>Baca Selengkapnya</span>
                         <i className="fa-solid fa-arrow-right text-[0.6rem] sm:text-[0.7rem]"></i>
-                      </span>
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -177,11 +176,13 @@ const Blog = () => {
           <div className="mt-6 sm:mt-8 flex items-center justify-center text-center">
             <button
               type="button"
+              aria-label="Muat artikel lebih banyak"
               className="inline-flex items-center gap-2 rounded-full border border-sky-600 px-5 sm:px-6 py-1.5 sm:py-2 text-[0.75rem] sm:text-xs font-bold text-sky-600 transition-all hover:bg-sky-600 hover:text-white cursor-pointer"
               onClick={handleLoadMore}
             >
               <i className="fa-solid fa-arrows-rotate"></i>
-             </button>
+              <span>Muat Lebih Banyak</span>
+            </button>
           </div>
         )}
       </section>
